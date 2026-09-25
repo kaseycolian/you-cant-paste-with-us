@@ -7,7 +7,15 @@ anywhere, such as a web page, Word, Google Docs, an email, or a code editor. Pre
 same text back, with the same formatting, and every name on your list swapped out. Then press
 **Copy result**.
 
-- Your swap list, and whether each swap is on or off, is saved in this browser (localStorage). No cookies.
+- Your swap list is only saved if you turn on **Save list in this browser** in the swap list. It's off by
+  default.
+  - On: the whole list, with each swap's on/off state, is written to this browser's localStorage and kept
+    up to date.
+  - Off: the saved copy is deleted straight away. The list stays on the page until you close the tab.
+  - On again: everything is written back.
+- Whether saving is on isn't stored separately: it's on exactly when a saved list exists. With it off,
+  nothing of the list is left in storage. The theme and Reduce motion choices are remembered in
+  localStorage too. No cookies.
 - Your text is never saved. It lives in the tab and is gone when you close or reload it.
 - Nothing is sent anywhere. The page's Content Security Policy blocks every outside request, including
   images inside what you paste.
@@ -114,7 +122,7 @@ src/swap-list.js      the swap list card: add, edit, delete, undo, on/off
 src/matcher.js        finds keys in text (pure)
 src/text-rules.js     the character rules matching relies on (pure)
 src/pairs.js          swap list operations and storage format (pure)
-src/pair-store.js     keeps the list in localStorage, in step across tabs
+src/pair-store.js     keeps the list in localStorage when saving is on, in step across tabs
 src/sanitize.js       cleans pasted HTML
 src/replace-dom.js    replaces keys inside a DOM tree, keeping its formatting
 src/plain-text.js     the text/plain half of a copy

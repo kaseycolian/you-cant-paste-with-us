@@ -87,22 +87,66 @@ test('parsePairs survives garbage and drops malformed entries', () => {
   assert.deepEqual(parsePairs(mixed), [sample()[0]]);
 });
 
-test('the store saves every change and tells subscribers who made it', () => {
+test('saving is off by default, and nothing is written', () => {
+  const storage = memoryStorage();
+  const store = createPairStore(storage, 'k');
+  assert.equal(store.isPersisting(), false);
+  store.set(sample());
+  assert.equal(storage.getItem('k'), null);
+  assert.deepEqual(store.get(), sample());
+});
+
+test('turning saving on writes everything, off deletes it, on again writes it back', () => {
   const storage = memoryStorage();
   const store = createPairStore(storage, 'k');
   const heard = [];
   store.subscribe((source) => heard.push(source));
   store.set(sample());
+
+  assert.equal(store.setPersisting(true), true);
   assert.deepEqual(parsePairs(storage.getItem('k')), sample());
-  storage.setItem('k', serializePairs([sample()[1]]));
-  store.reload();
-  assert.deepEqual(store.get(), [sample()[1]]);
-  assert.deepEqual(heard, ['local', 'external']);
+  store.set([sample()[0]]);
+  assert.deepEqual(parsePairs(storage.getItem('k')), [sample()[0]]);
+
+  assert.equal(store.setPersisting(false), false);
+  assert.equal(storage.getItem('k'), null);
+  assert.deepEqual(store.get(), [sample()[0]], 'the list stays in memory');
+  store.set(sample());
+  assert.equal(storage.getItem('k'), null, 'and nothing is written while off');
+
+  store.setPersisting(true);
+  assert.deepEqual(parsePairs(storage.getItem('k')), sample());
+  assert.deepEqual(heard, ['local', 'saving', 'local', 'saving', 'local', 'saving']);
 });
 
-test('the store keeps working when storage refuses to save', () => {
-  const store = createPairStore({ getItem: () => null, setItem: () => { throw new Error('quota'); } }, 'k');
+test('a saved list comes back on the next visit, with saving on', () => {
+  const storage = memoryStorage();
+  storage.setItem('k', serializePairs(sample()));
+  const store = createPairStore(storage, 'k');
+  assert.equal(store.isPersisting(), true);
+  assert.deepEqual(store.get(), sample());
+});
+
+test('reload follows another tab, and keeps this tab\'s list if that tab turned saving off', () => {
+  const storage = memoryStorage();
+  const store = createPairStore(storage, 'k');
   store.set(sample());
+  storage.setItem('k', serializePairs([sample()[1]]));
+  store.reload();
+  assert.equal(store.isPersisting(), true);
+  assert.deepEqual(store.get(), [sample()[1]]);
+  storage.removeItem('k');
+  store.reload();
+  assert.equal(store.isPersisting(), false);
+  assert.deepEqual(store.get(), [sample()[1]]);
+});
+
+test('if storage refuses to save, saving stays off and the list keeps working', () => {
+  const refusing = { getItem: () => null, setItem: () => { throw new Error('quota'); }, removeItem: () => {} };
+  const store = createPairStore(refusing, 'k');
+  store.set(sample());
+  assert.equal(store.setPersisting(true), false);
+  assert.equal(store.isPersisting(), false);
   assert.equal(store.isSaved(), false);
   assert.deepEqual(store.get(), sample());
 });

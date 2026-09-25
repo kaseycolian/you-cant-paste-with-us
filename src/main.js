@@ -16,7 +16,7 @@ const shortcut = isMac
 const liveRegion = document.getElementById('announcer');
 const announce = (text) => window.AC.speak(liveRegion, text);
 
-const { storage } = pickStorage();
+const { storage, available } = pickStorage();
 const store = createPairStore(storage, STORAGE_KEY);
 
 const workspace = createWorkspace(document.getElementById('workspace'), {
@@ -24,12 +24,15 @@ const workspace = createWorkspace(document.getElementById('workspace'), {
   announce,
   shortcut,
 });
-createSwapList(document.getElementById('swaps'), { store, announce });
-store.subscribe(() => workspace.pairsChanged());
+createSwapList(document.getElementById('swaps'), { store, announce, canSave: available });
+// Switching saving on or off leaves the list itself unchanged, so the result isn't out of date.
+store.subscribe((source) => {
+  if (source !== 'saving') workspace.pairsChanged();
+});
 
-// Another tab edited the list.
+// Another tab edited the list, or turned saving on or off (a null key means storage was cleared).
 window.addEventListener('storage', (event) => {
-  if (event.key === STORAGE_KEY) store.reload();
+  if (event.key === STORAGE_KEY || event.key === null) store.reload();
 });
 
 // Ctrl+Enter (⌘+Enter on a Mac) replaces from anywhere on the page.

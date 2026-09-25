@@ -1,4 +1,4 @@
-// The swap list card: the add form, the rows, editing, deleting and undo.
+// The swap list card: saving, the add form, the rows, editing, deleting and undo.
 
 import { addPair, removePair, restorePair, setAllOn, updatePair, validateFind } from './pairs.js';
 
@@ -7,9 +7,11 @@ import { addPair, removePair, restorePair, setAllOn, updatePair, validateFind } 
  * @param {object} deps
  * @param {ReturnType<typeof import('./pair-store.js').createPairStore>} deps.store
  * @param {(text: string) => void} deps.announce
+ * @param {boolean} deps.canSave false when the browser offers no storage at all
  */
-export function createSwapList(section, { store, announce }) {
+export function createSwapList(section, { store, announce, canSave }) {
   const $ = (selector) => section.querySelector(selector);
+  const saveToggle = $('#save-list');
   const form = $('#add-form');
   const findInput = $('#add-find');
   const replaceInput = $('#add-replace');
@@ -124,7 +126,8 @@ export function createSwapList(section, { store, announce }) {
     useAll.disabled = pairs.length === 0;
     countText.textContent = pairs.length ? `${on} of ${pairs.length} on` : '';
     emptyList.hidden = pairs.length > 0;
-    storageNote.hidden = store.isSaved();
+    saveToggle.checked = store.isPersisting();
+    storageNote.hidden = canSave && store.isSaved();
 
     // If the focused row vanished (another tab deleted it), land somewhere sensible.
     if (focusWasInList && !list.contains(document.activeElement)) findInput.focus();
@@ -226,6 +229,24 @@ export function createSwapList(section, { store, announce }) {
     focusRow(pair.id, '.swap-toggle'); // before the Undo button disappears
     clearUndo();
     announce(`Restored ${pair.find}.`);
+  });
+
+  // Saving: on writes the whole list to this browser's storage, off deletes it.
+  // Where storage is blocked the switch can't work, so it says why instead
+  // (soft-disabled, like the motion switch: still focusable, still explained).
+  if (!canSave) {
+    saveToggle.setAttribute('aria-disabled', 'true');
+    saveToggle.setAttribute('aria-describedby', 'save-hint storage-note');
+  }
+  saveToggle.addEventListener('click', (event) => {
+    if (saveToggle.getAttribute('aria-disabled') === 'true') event.preventDefault();
+  });
+  saveToggle.addEventListener('change', () => {
+    const wanted = saveToggle.checked;
+    const saving = store.setPersisting(wanted);
+    if (saving) announce('Your swap list is saved in this browser.');
+    else if (wanted) announce('This browser won’t let the page save the list.');
+    else announce('Saved copy deleted. The list stays until you close this tab.');
   });
 
   store.subscribe((source) => {

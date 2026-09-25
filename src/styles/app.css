@@ -312,6 +312,17 @@ kbd, code {
   .swap-list { flex: 1 1 auto; min-height: 0; overflow: auto; }
 }
 
+/* Saving is a choice the person makes, so it sits first, above the list it governs. */
+.save-zone {
+  margin-bottom: 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+.save-switch { min-height: 44px; font-size: 14px; }
+.save-hint { margin: 2px 0 0; font-size: 12.5px; line-height: 1.45; color: var(--text-muted); }
+.save-zone .notice { margin: 10px 0 0; }
+.save-switch:has(input[aria-disabled="true"]) { color: var(--text-muted); cursor: not-allowed; }
+
 .add-form {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -462,12 +473,46 @@ kbd, code {
    Footer
    ============================================================================= */
 .site-footer {
-  padding: 8px clamp(16px, 3vw, 32px) 28px;
+  padding: 8px clamp(16px, 3vw, 32px) 32px;
   text-align: center;
-  font-size: 13px;
+  font-size: 14.5px;
+  line-height: 1.55;
   color: var(--text-muted);
 }
-.site-footer p { max-width: 60ch; margin: 0 auto; }
+.site-footer p { max-width: 80ch; margin: 0 auto; }
+.site-footer p + p { margin-top: 6px; }
+
+/* The source link, after the A11Y Way site footer's .ftr-src: the mark, the words,
+   and an arrow that says it leaves. 44px tall, so it is a comfortable target. */
+.site-footer .ftr-src-line { margin-top: 8px; }
+.ftr-src {
+  display: inline-flex; align-items: center; gap: 9px;
+  min-height: 44px; padding: 0 6px;
+  font-size: 14px; font-weight: 600; color: var(--text); text-decoration: none;
+  border-radius: var(--radius-sm);
+}
+.ftr-gh {
+  width: 16px; height: 16px; flex: none; fill: currentColor;
+  transition: filter var(--dur) ease;
+}
+.ftr-ext {
+  width: 11px; height: 11px; flex: none; margin-left: -3px;
+  fill: none; stroke: currentColor; stroke-width: 1.6;
+  stroke-linecap: round; stroke-linejoin: round; opacity: .6;
+  transition: transform var(--dur) ease, opacity var(--dur) ease;
+}
+@media (hover: hover) {
+  .ftr-src:hover { text-decoration: underline; text-underline-offset: 4px; }
+  .ftr-src:hover .ftr-gh {
+    filter: drop-shadow(0 0 calc(5px * var(--glow-strength))
+                        color-mix(in srgb, var(--accent-purple) 75%, transparent));
+  }
+  .ftr-src:hover .ftr-ext {
+    opacity: 1;
+    transform: translate(calc(var(--motion) * 2px), calc(var(--motion) * -2px));
+  }
+}
+.ftr-src:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
 
 /* =============================================================================
    Phones

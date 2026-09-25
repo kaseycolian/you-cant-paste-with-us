@@ -1,10 +1,17 @@
-// Holds the swap list and keeps it in storage. The storage object is passed in,
-// so tests can use a plain in-memory one.
+// Holds the swap list, and keeps it in storage only while the person has asked
+// for that. The storage object is passed in, so tests can use an in-memory one.
+//
+// Whether saving is on is not stored separately: it is on exactly when a saved
+// list exists. So with saving off, nothing of this app's is left in storage,
+// and a reload still knows which way the switch should be.
 
 import { parsePairs, serializePairs } from './pairs.js';
 
-/** @typedef {{getItem(key: string): string | null, setItem(key: string, value: string): void}} StorageLike */
-/** @typedef {'local' | 'external'} ChangeSource */
+/**
+ * @typedef {{getItem(key: string): string | null, setItem(key: string, value: string): void,
+ *            removeItem(key: string): void}} StorageLike
+ * @typedef {'local' | 'external' | 'saving'} ChangeSource
+ */
 
 /**
  * @param {StorageLike} storage
@@ -13,13 +20,14 @@ import { parsePairs, serializePairs } from './pairs.js';
 export function createPairStore(storage, key) {
   const listeners = new Set();
   let saved = true;
-  let pairs = read();
+  let persisting = readRaw() !== null;
+  let pairs = persisting ? parsePairs(readRaw()) : [];
 
-  function read() {
+  function readRaw() {
     try {
-      return parsePairs(storage.getItem(key));
+      return storage.getItem(key);
     } catch {
-      return [];
+      return null;
     }
   }
 
@@ -30,6 +38,15 @@ export function createPairStore(storage, key) {
     } catch {
       saved = false;
     }
+    return saved;
+  }
+
+  function erase() {
+    try {
+      storage.removeItem(key);
+    } catch {
+      // Nothing was stored, or storage is unavailable: either way nothing is kept.
+    }
   }
 
   /** @param {ChangeSource} source */
@@ -39,15 +56,36 @@ export function createPairStore(storage, key) {
 
   return {
     get: () => pairs,
-    /** Replace the list, save it, and tell subscribers. */
+    /** Replace the list, save it if saving is on, and tell subscribers. */
     set(next) {
       pairs = next;
-      write();
+      if (persisting) write();
       emit('local');
     },
-    /** Re-read storage after another tab changed it. */
+    isPersisting: () => persisting,
+    /**
+     * Turning saving on writes the whole list now. Turning it off deletes the
+     * saved copy; the list itself stays in memory.
+     * @param {boolean} on
+     * @returns {boolean} whether the list is now being saved
+     */
+    setPersisting(on) {
+      if (on) {
+        persisting = write();
+        if (!persisting) erase();
+      } else {
+        persisting = false;
+        saved = true;
+        erase();
+      }
+      emit('saving');
+      return persisting;
+    },
+    /** Another tab changed storage: follow it. If it turned saving off, keep this tab's list. */
     reload() {
-      pairs = read();
+      const raw = readRaw();
+      persisting = raw !== null;
+      if (persisting) pairs = parsePairs(raw);
       emit('external');
     },
     /** False when the last save failed (quota, or storage blocked). */
@@ -66,20 +104,22 @@ export function memoryStorage() {
   return {
     getItem: (k) => (data.has(k) ? data.get(k) : null),
     setItem: (k, v) => data.set(k, String(v)),
+    removeItem: (k) => data.delete(k),
   };
 }
 
 /**
  * localStorage when the browser allows it, otherwise memory.
- * @returns {{storage: StorageLike, persistent: boolean}}
+ * @returns {{storage: StorageLike, available: boolean}} available is false when
+ *   nothing can outlive the tab
  */
 export function pickStorage() {
   try {
     const probe = '__text-replacer-probe__';
     window.localStorage.setItem(probe, probe);
     window.localStorage.removeItem(probe);
-    return { storage: window.localStorage, persistent: true };
+    return { storage: window.localStorage, available: true };
   } catch {
-    return { storage: memoryStorage(), persistent: false };
+    return { storage: memoryStorage(), available: false };
   }
 }
