@@ -272,7 +272,10 @@ kbd, code {
   color: var(--text-muted);
   pointer-events: none;
 }
-.sheet-panel:not([data-empty]) .placeholder { display: none; }
+/* Shown only while the editor holds nothing at all. The DOM decides, not an
+   event, so any way text arrives (including phone keyboards that skip input
+   events) hides it at once. */
+.editor:not(:empty) + .placeholder { display: none; }
 
 .empty-state {
   margin: 0;
@@ -295,6 +298,7 @@ kbd, code {
   font-size: 13px;
   color: var(--text-muted);
 }
+.clear-button { margin-top: 12px; }
 
 /* =============================================================================
    Swap list
@@ -518,7 +522,6 @@ kbd, code {
    ============================================================================= */
 @media (max-width: 620px) {
   body { font-size: 16px; }
-  .ws-actions > #replace { flex: 1 1 100%; }
   .ws-actions > .btn { flex: 1 1 auto; }
   .sheet-tabs { display: grid; grid-template-columns: 1fr 1fr; }
   .sheet-tab { justify-content: center; padding-inline: 10px; }

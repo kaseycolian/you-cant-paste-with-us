@@ -82,7 +82,6 @@ export function createWorkspace(section, { getPairs, announce, shortcut }) {
     if (!text) text = `Ready. ${shortcut.label} replaces from anywhere on the page.`;
     status.textContent = text;
     tabReplaced.toggleAttribute('data-stale', Boolean(result?.stale));
-    panelOriginal.toggleAttribute('data-empty', !hasText());
   }
 
   /* ---- scroll position, kept in step between the two views --------------- */
@@ -299,7 +298,6 @@ export function createWorkspace(section, { getPairs, announce, shortcut }) {
     selection.removeAllRanges();
     selection.addRange(caret);
     revealInEditor(last);
-    source.dispatchEvent(new Event('input', { bubbles: true }));
   }
 
   source.addEventListener('paste', (event) => {
@@ -313,10 +311,29 @@ export function createWorkspace(section, { getPairs, announce, shortcut }) {
   // Dragging text around inside the page would carry the theme's colors with it.
   for (const el of [source, output]) el.addEventListener('dragstart', (event) => event.preventDefault());
 
-  source.addEventListener('input', () => {
+  // Every change to the editor shows up here, however it was made: typing, a
+  // phone keyboard's predictive text, voice input, autocorrect, paste, cut, undo.
+  // It watches the text itself rather than listening for input events, because
+  // some Android keyboards change the text without the events a desktop sends.
+  let composing = false;
+  function edited() {
+    // Deleting everything can leave an invisible <br> behind. Clearing it lets
+    // the placeholder (shown by CSS while the editor is :empty) come back. Never
+    // mid-word on a phone keyboard, where the text is still being composed.
+    if (!composing && source.textContent === '' && source.firstChild && !source.querySelector('img')) {
+      source.replaceChildren();
+    }
     if (!hasText()) rich = false;
     markStale();
     refresh();
+  }
+  new MutationObserver(edited).observe(source, { childList: true, characterData: true, subtree: true });
+  source.addEventListener('compositionstart', () => {
+    composing = true;
+  });
+  source.addEventListener('compositionend', () => {
+    composing = false;
+    edited();
   });
 
   /** Copies (and cuts) write the markup as it is, not the page's computed colors. */
@@ -329,10 +346,7 @@ export function createWorkspace(section, { getPairs, announce, shortcut }) {
     event.preventDefault();
     event.clipboardData.setData('text/plain', payload.text);
     if (payload.html !== null) event.clipboardData.setData('text/html', payload.html);
-    if (cut) {
-      range.deleteContents();
-      source.dispatchEvent(new Event('input', { bubbles: true }));
-    }
+    if (cut) range.deleteContents();
   }
   source.addEventListener('copy', (event) => onCopy(event, source, false));
   source.addEventListener('cut', (event) => onCopy(event, source, true));

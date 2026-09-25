@@ -79,7 +79,6 @@
       <div class="ws-actions">
         <button type="button" class="btn btn-solid a-pink" id="replace">Replace</button>
         <button type="button" class="btn btn-outline a-blue" id="copy">Copy result</button>
-        <button type="button" class="btn btn-ghost" id="clear">Clear All Text</button>
       </div>
       <p class="status-line" id="ws-status"></p>
 
@@ -92,7 +91,7 @@
         </div>
         <div class="sheet-body">
           <!-- No tabindex on this panel: its first child is the labelled editor, so Tab lands there directly. -->
-          <div class="sheet-panel" role="tabpanel" id="panel-original" aria-labelledby="tab-original" data-empty>
+          <div class="sheet-panel" role="tabpanel" id="panel-original" aria-labelledby="tab-original">
             <div class="doc editor fx-scroll" id="source" contenteditable="true" role="textbox"
                  aria-multiline="true" aria-labelledby="tab-original" aria-describedby="source-hint"
                  aria-placeholder="Paste or type your text"
@@ -108,6 +107,8 @@
         </div>
       </div>
       <p class="hint" id="source-hint">Formatting is kept.</p>
+      <!-- Away from Replace and Copy, so reaching for those never clears the text by accident. -->
+      <button type="button" class="btn btn-ghost clear-button" id="clear">Clear All Text</button>
     </section>
 
     <section class="card swaps" id="swaps" aria-labelledby="swaps-title">
