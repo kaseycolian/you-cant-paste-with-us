@@ -1,0 +1,3 @@
+# Local build of the Pages site (the deploy workflow assembles its own).
+_site/
+node_modules/

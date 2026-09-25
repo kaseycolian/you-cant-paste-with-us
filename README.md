@@ -21,7 +21,16 @@ served; opening `index.html` as a file won't work.
 npm start        # serves this folder on http://localhost:8080 (PORT=3000 npm start to change it)
 ```
 
-Any static host works too (GitHub Pages included). All paths are relative.
+Any static host works too. All paths are relative.
+
+## Deploy
+
+Every push to `main` runs `.github/workflows/deploy.yml`. It runs the unit tests, copies `index.html`,
+`favicon.svg`, `src/` and `assets/` into `_site/`, and publishes that folder to GitHub Pages at
+<https://kaseycolian.github.io/you-cant-paste-with-us/>. A failing test stops the deploy. You can also
+start it from the Actions tab (**Run workflow**).
+
+One-time setup: in the repo's **Settings → Pages**, set **Source** to **GitHub Actions**.
 
 ## Rename it
 
@@ -97,7 +106,7 @@ theme-service skill rather than by hand.
 
 ## Project layout
 
-```
+```text
 index.html            page shell, templates, CSP
 src/main.js           wires the modules together
 src/workspace.js      the text card: editor, Original/Replaced views, Replace, Copy, Clear
