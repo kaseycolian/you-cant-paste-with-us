@@ -144,7 +144,6 @@ kbd, code {
   align-items: center;
   gap: 10px;
 }
-.remove-links { margin-left: auto; padding-inline: 4px; }
 
 /* Always two lines tall, so a message arriving or growing never moves the sheet. */
 .status-line {
@@ -521,7 +520,6 @@ kbd, code {
   body { font-size: 16px; }
   .ws-actions > #replace { flex: 1 1 100%; }
   .ws-actions > .btn { flex: 1 1 auto; }
-  .remove-links { margin-left: 0; }
   .sheet-tabs { display: grid; grid-template-columns: 1fr 1fr; }
   .sheet-tab { justify-content: center; padding-inline: 10px; }
   .sheet-body { height: clamp(14rem, 50svh, 30rem); }

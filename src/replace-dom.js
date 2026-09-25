@@ -100,17 +100,11 @@ function replaceAttributes(el, matcher, result) {
 /**
  * @param {Element} root the tree to rewrite, in place
  * @param {import('./matcher.js').Matcher | null} matcher
- * @param {{removeLinks?: boolean}} [options] removeLinks keeps each link's text
- *   and drops its address
  * @returns {{count: number, usedIds: Set<string>, marks: {node: Text, start: number, end: number}[],
  *            links: number, images: number}}
  */
-export function replaceInTree(root, matcher, { removeLinks = false } = {}) {
+export function replaceInTree(root, matcher) {
   const result = { count: 0, usedIds: new Set(), marks: [], links: 0, images: 0 };
-
-  if (removeLinks) {
-    for (const a of root.querySelectorAll('a')) a.replaceWith(...a.childNodes);
-  }
 
   for (const run of textRuns(root)) {
     const matches = findMatches(run.map((n) => n.data).join(''), matcher);

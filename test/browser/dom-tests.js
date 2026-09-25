@@ -26,10 +26,10 @@ const clean = (html) => {
   return box;
 };
 const matcher = (...pairs) => createMatcher(pairs.map(([find, replace], i) => ({ id: `p${i}`, find, replace, on: true })));
-const replaced = (html, m, options) => {
+const replaced = (html, m) => {
   const box = document.createElement('div');
   box.innerHTML = html;
-  const outcome = replaceInTree(box, m, options);
+  const outcome = replaceInTree(box, m);
   return { html: box.innerHTML, outcome };
 };
 
@@ -147,10 +147,10 @@ test('a replacement that would make a link unsafe drops the address', () => {
   equal(html, '<a>x</a>');
 });
 
-test('Remove links keeps each link\'s text', () => {
-  const { html, outcome } = replaced('<p>see <a href="https://x.test"><b>here</b></a></p>', matcher(['zzz', 'y']), { removeLinks: true });
-  equal(html, '<p>see <b>here</b></p>');
-  equal(outcome.links, 0);
+test('links are kept and counted for the status line', () => {
+  const { html, outcome } = replaced('<p>see <a href="https://x.test"><b>here</b></a></p>', matcher(['zzz', 'y']));
+  equal(html, '<p>see <a href="https://x.test"><b>here</b></a></p>');
+  equal(outcome.links, 1);
 });
 
 test('marks point at the replaced text in the rewritten nodes', () => {

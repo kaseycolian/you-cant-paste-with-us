@@ -21,7 +21,6 @@ export function createWorkspace(section, { getPairs, announce, shortcut }) {
   const $ = (selector) => section.querySelector(selector);
   const replaceButton = $('#replace');
   const copyButton = $('#copy');
-  const removeLinks = $('#remove-links');
   const status = $('#ws-status');
   const sheet = $('#sheet');
   const source = $('#source');
@@ -185,7 +184,7 @@ export function createWorkspace(section, { getPairs, announce, shortcut }) {
     const copy = document.createDocumentFragment();
     for (const node of source.childNodes) copy.append(node.cloneNode(true));
     output.replaceChildren(copy);
-    const outcome = replaceInTree(output, matcher, { removeLinks: removeLinks.checked });
+    const outcome = replaceInTree(output, matcher);
     emptyState.hidden = true;
     paintHighlights(outcome.marks);
     result = { summary: summarize(outcome), stale: false };
@@ -241,10 +240,6 @@ export function createWorkspace(section, { getPairs, announce, shortcut }) {
   replaceButton.addEventListener('click', replace);
   copyButton.addEventListener('click', copyResult);
   $('#clear').addEventListener('click', clear);
-  removeLinks.addEventListener('change', () => {
-    markStale();
-    refresh();
-  });
 
   /* ---- the editor ------------------------------------------------------- */
 

@@ -79,8 +79,7 @@
       <div class="ws-actions">
         <button type="button" class="btn btn-solid a-pink" id="replace">Replace</button>
         <button type="button" class="btn btn-outline a-blue" id="copy">Copy result</button>
-        <button type="button" class="btn btn-ghost" id="clear">Clear</button>
-        <label class="choice remove-links"><input type="checkbox" id="remove-links">Remove links</label>
+        <button type="button" class="btn btn-ghost" id="clear">Clear All Text</button>
       </div>
       <p class="status-line" id="ws-status"></p>
 
@@ -120,7 +119,7 @@
           <input type="checkbox" id="save-list" aria-describedby="save-hint">
           <span class="track" aria-hidden="true"><span class="thumb"></span></span>Save list in this browser
         </label>
-        <p class="save-hint" id="save-hint">Off by default. Uses this browser’s local storage. Turning it off deletes the saved copy.</p>
+        <p class="save-hint" id="save-hint">Enabling this setting uses this browser’s local storage. Disabling it deletes the saved copy.</p>
         <p class="notice warn" id="storage-note" hidden>
           This browser won’t let the page save, so the list goes when you close the tab.
         </p>
@@ -152,15 +151,16 @@
           </span>
         </p>
       </div>
-      <p class="empty-list" id="empty-list">No swaps yet. Add a name above, and what it should become.</p>
+      <p class="empty-list" id="empty-list">Nothing added to the find/replace list yet.</p>
       <ul class="swap-list fx-scroll" id="swap-list" aria-labelledby="swaps-title"></ul>
     </section>
   </main>
 
   <footer class="site-footer">
-    <p>Your text stays in this tab and disappears when you close it. Your swap list is saved in this browser only,
-      with your permission. Nothing is sent anywhere.</p>
-    <p>No packages are installed. Everything is vanilla JS, HTML, and CSS.</p>
+    <p>Your text stays in this tab and disappears when you close it. Your swap list is only saved in this browser,
+      with your permission.</p>
+    <p>Nothing is sent anywhere.</p>
+    <p>No packages are installed - it’s all Vanilla JS, HTML, and CSS.</p>
     <!-- Opens in a new tab so following it never loses the text in this one. The arrow
          is aria-hidden decoration, so the warning is real (clipped) text. It has no
          punctuation in front: clipping blockifies it and the accessible name supplies

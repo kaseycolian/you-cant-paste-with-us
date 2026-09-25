@@ -20,6 +20,20 @@ same text back, with the same formatting, and every name on your list swapped ou
 - Nothing is sent anywhere. The page's Content Security Policy blocks every outside request, including
   images inside what you paste.
 
+## Where your data goes
+
+Nowhere. This site is a handful of static files: HTML, CSS and JavaScript. There's no server code and no
+database, and nothing to send your text to. Once the page loads, all the work happens in your browser:
+finding and replacing, cleaning up what you paste, copying, and saving your list if you ask it to. The
+page is also locked down so it can't contact any other site.
+
+On GitHub Pages there's no Node at all; GitHub just hands your browser the files. If you run it yourself,
+`npm start` starts a tiny Node file server that does one thing: it hands your browser the app's files. It
+never receives your text or your list, because those never leave the page.
+
+Like any website, the host (GitHub, or your own machine) can see that the page was loaded. That's an
+ordinary web request. It never sees your text or your swap list.
+
 ## Run it
 
 It's a static site with no dependencies and no build step. The code uses ES modules, so it has to be
@@ -60,7 +74,7 @@ the header. Saved lists are stored under `text-replacer:*` keys, so renaming the
 - **The longest key wins** where two overlap, so `Acme Corp` beats `Acme`.
 - **Replacements are never replaced again**, so swapping Alice→Bob and Bob→Carol at once works.
 - **Link addresses and image alt text are searched too**, because they are copied along with the text.
-  Tick **Remove links** to drop link addresses from the result and keep only the link text.
+  The status line says how many links the result keeps, so you know to check their addresses.
 - **An empty "Replace with" deletes the match.**
 - There's no limit on the number of swaps. Ten thousand search in about a fifth of a second.
 
