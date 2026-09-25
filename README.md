@@ -132,7 +132,7 @@ theme-service skill rather than by hand.
 index.html            page shell, templates, CSP
 src/main.js           wires the modules together
 src/workspace.js      the text card: editor, Original/Replaced views, Replace, Copy, Clear
-src/swap-list.js      the swap list card: add, edit, delete, undo, on/off
+src/swap-list.js      the swap list card: add, edit, delete, on/off
 src/matcher.js        finds keys in text (pure)
 src/text-rules.js     the character rules matching relies on (pure)
 src/pairs.js          swap list operations and storage format (pure)

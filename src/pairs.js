@@ -40,13 +40,6 @@ export function removePair(pairs, id) {
   return { pairs: pairs.filter((p) => p.id !== id), removed: pairs[index], index };
 }
 
-/** Puts a removed pair back where it was, or at the end if the list shrank. */
-export function restorePair(pairs, pair, index) {
-  if (pairs.some((p) => p.id === pair.id)) return pairs;
-  const at = Math.min(Math.max(index, 0), pairs.length);
-  return [...pairs.slice(0, at), pair, ...pairs.slice(at)];
-}
-
 export function setAllOn(pairs, on) {
   return pairs.map((p) => (p.on === on ? p : { ...p, on }));
 }

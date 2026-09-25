@@ -113,7 +113,6 @@ kbd, code {
 
 /* Buttons here are at least 44px tall, whatever components.css says. */
 .btn { min-height: 44px; justify-content: center; }
-.btn-small { min-height: 36px; padding: 6px 12px; font-size: 12px; }
 .choice { min-height: 44px; }
 
 /* Soft-disabled: still focusable and still named, so it can say why it won't
@@ -396,8 +395,6 @@ kbd, code {
   font-size: 13px;
   color: var(--text-muted);
 }
-.undo { display: flex; align-items: center; gap: 8px; min-width: 0; }
-.undo-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .empty-list { margin: 10px 0 0; color: var(--text-muted); font-size: 14px; }
 

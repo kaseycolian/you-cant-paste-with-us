@@ -1,6 +1,9 @@
-// The swap list card: saving, the add form, the rows, editing, deleting and undo.
+// The swap list card: saving, the add form, the rows, editing and deleting.
+//
+// A deleted swap is gone at once: nothing keeps a copy to bring it back, so
+// the page never holds more than the person can see in the list.
 
-import { addPair, removePair, restorePair, setAllOn, updatePair, validateFind } from './pairs.js';
+import { addPair, removePair, setAllOn, updatePair, validateFind } from './pairs.js';
 
 /**
  * @param {HTMLElement} section
@@ -20,9 +23,6 @@ export function createSwapList(section, { store, announce, canSave }) {
   const list = $('#swap-list');
   const useAll = $('#use-all');
   const countText = $('#list-count');
-  const undoZone = $('#undo-zone');
-  const undoText = $('#undo-text');
-  const undoButton = $('#undo');
   const emptyList = $('#empty-list');
   const storageNote = $('#storage-note');
   const rowTemplate = document.getElementById('swap-row');
@@ -31,7 +31,6 @@ export function createSwapList(section, { store, announce, canSave }) {
   /** Each pair's <li>, reused between renders so focus stays where it is. */
   const rows = new Map();
   let editingId = null;
-  let lastDeleted = null; // { pair, index }
 
   /* ---- rendering -------------------------------------------------------- */
 
@@ -77,7 +76,6 @@ export function createSwapList(section, { store, announce, canSave }) {
         find.focus();
         return;
       }
-      clearUndo();
       editingId = null;
       store.set(updatePair(store.get(), pair.id, { find: find.value.trim(), replace: replace.value.trim() }));
       focusRow(pair.id, '.swap-edit');
@@ -153,29 +151,14 @@ export function createSwapList(section, { store, announce, canSave }) {
     focusRow(id, '.swap-edit');
   }
 
-  function showUndo(find) {
-    undoText.textContent = `Deleted “${find}”.`;
-    undoZone.hidden = false;
-    countText.hidden = true;
-  }
-
-  function clearUndo() {
-    lastDeleted = null;
-    undoZone.hidden = true;
-    undoText.textContent = '';
-    countText.hidden = false;
-  }
-
   function remove(id) {
     const pairs = store.get();
     const { pairs: rest, removed, index } = removePair(pairs, id);
     if (!removed) return;
     const neighbour = pairs[index + 1]?.id ?? pairs[index - 1]?.id;
-    lastDeleted = { pair: removed, index };
     store.set(rest);
-    showUndo(removed.find);
     if (!(neighbour && focusRow(neighbour, '.swap-toggle'))) findInput.focus();
-    announce(`Deleted ${removed.find}. Undo is beside Use all.`);
+    announce(`Deleted ${removed.find}.`);
   }
 
   form.addEventListener('submit', (event) => {
@@ -188,7 +171,6 @@ export function createSwapList(section, { store, announce, canSave }) {
     }
     findField.clearError();
     const find = findInput.value.trim();
-    clearUndo();
     store.set(addPair(store.get(), findInput.value, replaceInput.value));
     form.reset();
     findInput.focus();
@@ -222,15 +204,6 @@ export function createSwapList(section, { store, announce, canSave }) {
     store.set(setAllOn(store.get(), useAll.checked));
   });
 
-  undoButton.addEventListener('click', () => {
-    if (!lastDeleted) return;
-    const { pair, index } = lastDeleted;
-    store.set(restorePair(store.get(), pair, index));
-    focusRow(pair.id, '.swap-toggle'); // before the Undo button disappears
-    clearUndo();
-    announce(`Restored ${pair.find}.`);
-  });
-
   // Saving: on writes the whole list to this browser's storage, off deletes it.
   // Where storage is blocked the switch can't work, so it says why instead
   // (soft-disabled, like the motion switch: still focusable, still explained).
@@ -249,11 +222,7 @@ export function createSwapList(section, { store, announce, canSave }) {
     else announce('Saved copy deleted. The list stays until you close this tab.');
   });
 
-  store.subscribe((source) => {
-    // Another tab changed the list, so the saved position may be wrong.
-    if (source === 'external') clearUndo();
-    render();
-  });
+  store.subscribe(render);
 
   render();
 }

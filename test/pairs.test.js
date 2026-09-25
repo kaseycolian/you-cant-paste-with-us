@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  addPair, parsePairs, removePair, restorePair, serializePairs, setAllOn, updatePair, validateFind,
+  addPair, parsePairs, removePair, serializePairs, setAllOn, updatePair, validateFind,
 } from '../src/pairs.js';
 import { createPairStore, memoryStorage } from '../src/pair-store.js';
 
@@ -40,25 +40,17 @@ test('updatePair changes only the named pair', () => {
   assert.equal(list[1].on, false);
 });
 
-test('removePair and restorePair round-trip to the same order', () => {
+test('removePair drops the pair and says which one and where', () => {
   const list = sample();
   const { pairs, removed, index } = removePair(list, 'a');
   assert.deepEqual(pairs.map((p) => p.id), ['b']);
   assert.equal(removed.id, 'a');
   assert.equal(index, 0);
-  assert.deepEqual(restorePair(pairs, removed, index).map((p) => p.id), ['a', 'b']);
 });
 
 test('removePair on a missing id changes nothing', () => {
   const list = sample();
   assert.equal(removePair(list, 'zzz').pairs, list);
-});
-
-test('restorePair never duplicates and clamps a stale index', () => {
-  const list = sample();
-  assert.equal(restorePair(list, list[0], 0), list);
-  const restored = restorePair([], list[1], 5);
-  assert.deepEqual(restored.map((p) => p.id), ['b']);
 });
 
 test('setAllOn switches every pair', () => {
