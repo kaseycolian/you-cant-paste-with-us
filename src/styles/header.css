@@ -1,0 +1,250 @@
+/* =============================================================================
+   Page header: the app's name, the Reduce motion switch, and the theme console.
+
+   The theme console, the motion switch styling, the glass rail and its lit
+   bottom edge are ported from theme-service v1.5.0,
+   a11y-way-pages/assets/site-header.css, so the picker looks and behaves exactly
+   like the one on the theme-service site. Differences, all deliberate:
+   - three zones (brand, motion, theme) instead of four, so the responsive
+     layout is rewritten as a flex-wrap rather than that file's grid;
+   - the header is position: relative, not sticky (the lit edge is drawn on
+     ::after and needs a positioned box that is the header itself);
+   - the brand lockup, page nav and skip link rules are not used here.
+   Every value is a theme token, so the header re-skins with the page.
+   ============================================================================= */
+
+.site-header, .site-header * { box-sizing: border-box; }
+
+.site-header {
+  position: relative;
+  background: color-mix(in srgb, var(--bg-panel) 88%, transparent);
+  -webkit-backdrop-filter: blur(10px) saturate(1.15);
+  backdrop-filter: blur(10px) saturate(1.15);
+}
+
+/* The lit tube along the bottom edge. */
+.site-header::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 2px;
+  pointer-events: none;
+  background: linear-gradient(90deg, var(--accent-pink), var(--accent-purple), var(--accent-blue));
+  box-shadow: 0 0 calc(10px * var(--glow-strength))
+              color-mix(in srgb, var(--accent-purple) 45%, transparent);
+}
+
+/* Two zones on one line when they fit: the brand on the left, the controls on
+   the right. When they don't, the controls wrap under the brand and stay
+   right-aligned. Wrapping asks "does this fit?" directly, which a px breakpoint
+   can only guess at across fonts. DOM order never changes, so tab order always
+   matches reading order. */
+.hdr-inner {
+  max-width: 1600px; margin: 0 auto;
+  padding: clamp(13px, 2.2vw, 22px) clamp(16px, 3vw, 32px);
+  display: flex; flex-wrap: wrap; align-items: center;
+  column-gap: 24px; row-gap: 12px;
+}
+
+/* ---------------------------------------------------------------------------
+   Brand
+   --------------------------------------------------------------------------- */
+.brand {
+  display: flex; align-items: center; gap: 12px;
+  flex: 1 1 18rem; min-width: 0; margin-right: auto;
+}
+.brand-mark {
+  width: 34px; height: 34px; flex: none;
+  fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+  filter: drop-shadow(0 0 calc(3px * var(--glow-strength))
+                      color-mix(in srgb, var(--accent-pink) 55%, transparent));
+}
+.brand-mark .bm-back { stroke: var(--accent-blue); }
+.brand-mark .bm-front { stroke: var(--accent-pink); fill: var(--bg-panel); }
+.brand-mark .bm-line { stroke: var(--text-muted); }
+.brand-mark .bm-redact { fill: var(--accent-green); stroke: none; }
+
+.brand-text { min-width: 0; }
+/* The name wraps rather than overflowing: at 320px it is wider than the screen. */
+.brand-name {
+  margin: 0; font-size: clamp(18px, 1.1vw + 13px, 24px); font-weight: 800;
+  line-height: 1.15; letter-spacing: .01em; color: var(--text);
+  text-wrap: balance; overflow-wrap: anywhere;
+}
+.brand-tag {
+  margin: 3px 0 0; font-family: var(--font-mono); font-size: 12.5px;
+  letter-spacing: .02em; color: var(--text-muted);
+}
+
+/* ---------------------------------------------------------------------------
+   Controls: Reduce motion, then the theme console
+   --------------------------------------------------------------------------- */
+.hdr-controls {
+  display: flex; align-items: center; justify-content: flex-end;
+  gap: 18px; margin-left: auto; min-width: 0;
+}
+.motion-zone { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; flex: none; }
+
+/* A preference, so it stays small and muted. Keeps the shipped .switch
+   geometry (44x24), and the whole label is the target. */
+.motion {
+  font-size: 12px; color: var(--text-muted); gap: 9px; min-height: 44px;
+  white-space: nowrap; transition: color var(--dur) ease;
+}
+@media (hover: hover) { .motion:hover { color: var(--text); } }
+
+/* Shown only when the device asks for reduced motion: the switch can't undo
+   that, and this says why (a11y-library: motion-preferences). CSS decides, so
+   it is right from the first paint and nothing shifts. */
+.motion-note { display: none; margin: -8px 0 0; font-size: 11.5px; color: var(--text-muted); }
+@media (prefers-reduced-motion: reduce) {
+  .motion-note { display: block; }
+  .motion { cursor: not-allowed; }
+}
+
+/* ---------------------------------------------------------------------------
+   Theme console. Ported verbatim from site-header.css apart from sizes noted.
+   A labelled instrument: a cap naming it, four lamps showing the palette you
+   are on (painted from --accent-*, so a theme change re-colors them with no
+   JS), and the control filling the rest.
+   --------------------------------------------------------------------------- */
+.theme-console {
+  display: inline-flex; align-items: center; height: 36px; min-width: 0;
+  border-radius: var(--radius); overflow: hidden; cursor: pointer;
+  background: color-mix(in srgb, var(--accent-purple) 7%, var(--bg-elevated));
+  border: 1px solid color-mix(in srgb, var(--accent-purple) 50%, var(--border));
+  box-shadow: 0 0 calc(12px * var(--glow-strength))
+              color-mix(in srgb, var(--accent-purple) 20%, transparent);
+  transition: border-color var(--dur) ease, box-shadow var(--dur) ease;
+}
+@media (hover: hover) {
+  .theme-console:hover {
+    border-color: var(--accent-purple);
+    box-shadow: 0 0 calc(18px * var(--glow-strength))
+                color-mix(in srgb, var(--accent-purple) 38%, transparent);
+  }
+}
+/* The trigger is the real control, so the ring belongs to the console it fills. */
+.theme-console:has(.dropdown-toggle:focus-visible),
+.theme-console:has(select:focus-visible) {
+  outline: 3px solid var(--focus-ring); outline-offset: 2px;
+}
+.theme-console:has(select:focus-visible) select { outline: none; }
+
+.tc-cap {
+  display: flex; align-items: center; align-self: stretch; padding: 0 11px;
+  font-family: var(--font-mono); font-size: 10px; font-weight: 700;
+  letter-spacing: .16em; text-transform: uppercase; color: var(--text-muted);
+  background: color-mix(in srgb, var(--text) 6%, transparent);
+  border-right: 1px solid color-mix(in srgb, var(--accent-purple) 35%, var(--border));
+}
+
+.tc-lamps { display: inline-flex; align-items: center; gap: 5px; padding: 0 11px; flex: none; }
+.tc-lamps i {
+  width: 8px; height: 8px; border-radius: 50%;
+  background-color: var(--lamp);
+  box-shadow: 0 0 calc(5px * var(--glow-strength))
+              color-mix(in srgb, var(--lamp) 65%, transparent);
+  /* Staggered so the palette rolls left to right on a theme change; Reduce
+     motion and the OS setting collapse the sweep to an instant swap. */
+  transition: background-color calc(var(--motion) * .3s) ease,
+              box-shadow calc(var(--motion) * .3s) ease;
+}
+.tc-lamps i:nth-child(1) { --lamp: var(--accent-pink); }
+.tc-lamps i:nth-child(2) { --lamp: var(--accent-green);  transition-delay: calc(var(--motion) * 50ms); }
+.tc-lamps i:nth-child(3) { --lamp: var(--accent-blue);   transition-delay: calc(var(--motion) * 100ms); }
+.tc-lamps i:nth-child(4) { --lamp: var(--accent-purple); transition-delay: calc(var(--motion) * 150ms); }
+
+/* --- the enhanced control (dropdown.js) ----------------------------------- */
+
+/* The open panel matches its anchor (the whole console, via
+   data-dropdown-anchor). The fixed width is the measured one from
+   site-header.css: it fits the longest theme name in the closed trigger. */
+.theme-console .dropdown {
+  flex: 0 1 auto; width: 316px; min-width: 0; align-self: stretch;
+}
+.theme-console .dropdown-toggle {
+  height: 100%; min-height: 0;
+  padding: 0 11px; gap: 8px;
+  border: 0; border-radius: 0; background: transparent; box-shadow: none;
+  font-family: var(--font-mono); font-size: 12.5px; font-weight: 600;
+  color: var(--text);
+}
+.theme-console .dropdown-toggle[aria-expanded="true"] {
+  background: color-mix(in srgb, var(--accent-purple) 14%, transparent);
+  box-shadow: none;
+}
+.theme-console .dropdown-toggle:focus-visible { outline: none; box-shadow: none; }
+.theme-console .dropdown-caret { color: var(--accent-purple); }
+
+/* --- the native fallback (dropdown.js absent) ----------------------------- */
+
+.theme-console select {
+  -webkit-appearance: none; appearance: none;
+  flex: 1 1 auto; min-width: 0; max-width: 240px;
+  align-self: stretch; border: 0; background: transparent; outline: none;
+  padding: 0 6px 0 0; cursor: pointer;
+  font-family: var(--font-mono); font-size: 12.5px; font-weight: 600;
+  color: var(--text);
+  text-overflow: ellipsis; white-space: nowrap; overflow: hidden;
+}
+.theme-console select option { background: var(--bg-elevated); color: var(--text); }
+.theme-console select optgroup { background: var(--bg-elevated); color: var(--text-muted); }
+.theme-console:not(:has(.dropdown))::after {
+  content: ""; flex: none; width: 10px; height: 5px; margin-right: 13px;
+  background-image: linear-gradient(45deg, transparent 50%, var(--accent-purple) 50%),
+                    linear-gradient(135deg, var(--accent-purple) 50%, transparent 50%);
+  background-position: 0 0, 5px 0;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+}
+
+/* =============================================================================
+   Narrow screens
+   ============================================================================= */
+
+/* The controls get a row of their own: switch on the left, console filling
+   what is left, capped where the site header caps it. */
+@media (max-width: 720px) {
+  .hdr-controls { flex: 1 1 100%; justify-content: space-between; gap: 12px; }
+  .theme-console { flex: 1 1 0; width: auto; max-width: 340px; }
+  .theme-console select { max-width: none; }
+  .theme-console .dropdown { width: auto; flex: 1 1 auto; }
+  .theme-console .dropdown-swatch { gap: 4px; }
+  .theme-console .dropdown-swatch > span { width: 6px; height: 6px; }
+}
+
+/* Phones: one step down in type and gutters, and the console's cap is clipped,
+   NOT removed: it is the control's accessible name through aria-labelledby,
+   and a name pointing at a display:none element resolves to nothing. */
+@media (max-width: 480px) {
+  .hdr-inner { padding-inline: 14px; column-gap: 12px; }
+  .brand { gap: 10px; }
+  .brand-mark { width: 28px; height: 28px; }
+  .brand-tag { font-size: 12px; }
+  .tc-lamps { padding: 0 9px; gap: 4px; }
+  .theme-console .dropdown-swatch { gap: 3px; }
+  .theme-console .dropdown-swatch > span { width: 5px; height: 5px; }
+  .tc-cap {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0;
+  }
+}
+
+/* =============================================================================
+   Windows High Contrast
+   ============================================================================= */
+@media (forced-colors: active) {
+  /* The lamps and the panel's dots are painted with background-color alone,
+     which forced colors replaces, so ring them instead. */
+  .tc-lamps i,
+  .theme-console .dropdown-swatch > span {
+    outline: 1px solid CanvasText;
+    outline-offset: -1px;
+  }
+  .theme-console .dropdown-swatch > span::after { display: none; }
+  .theme-console { border-color: CanvasText; }
+  .theme-console:has(.dropdown-toggle:focus-visible),
+  .theme-console:has(select:focus-visible) { outline-color: Highlight; }
+  .site-header::after { background: CanvasText; }
+  .brand-mark .bm-back, .brand-mark .bm-front, .brand-mark .bm-line { stroke: CanvasText; }
+  .brand-mark .bm-front { fill: Canvas; }
+  .brand-mark .bm-redact { fill: CanvasText; }
+}

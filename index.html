@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="en" data-theme-storage="text-replacer:theme" data-motion-storage="text-replacer:motion">
+<head>
+  <meta charset="utf-8">
+  <!-- Nothing on this page may load from, or send to, anywhere else. -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta name="referrer" content="no-referrer">
+  <meta name="google" content="notranslate">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Swap real names for stand-ins in pasted text, keeping its formatting. Everything stays in your browser.">
+  <!-- The app's name lives here and only here. src/app-name.js copies it into the header. -->
+  <title>You Can’t Paste with Us</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <!-- Applies the saved theme before first paint. External on purpose: the CSP above blocks inline scripts. -->
+  <script src="assets/theme/theme-init.js"></script>
+  <link rel="stylesheet" href="assets/theme/theme.css">
+  <link rel="stylesheet" href="assets/theme/effects.css">
+  <link rel="stylesheet" href="assets/theme/components.css">
+  <link rel="stylesheet" href="assets/theme/dropdown.css">
+  <link rel="stylesheet" href="src/styles/header.css">
+  <link rel="stylesheet" href="src/styles/app.css">
+</head>
+<body class="fx-grid">
+  <a class="skip-link" href="#ws-title">Skip to your text</a>
+
+  <p class="notice warn file-note" id="file-note" hidden>
+    This page needs to be served, not opened as a file. In this folder, run <code>npm start</code> and open
+    <code>http://localhost:8080</code>.
+  </p>
+
+  <!-- Icons, drawn once and reused. Kept out of layout with CSS: `hidden` does nothing on an <svg>. -->
+  <svg class="sprite" aria-hidden="true" focusable="false">
+    <symbol id="i-edit" viewBox="0 0 24 24"><path d="M4 20h4L19 9a2.1 2.1 0 0 0-3-3L5 17v3Z M14 8l3 3"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16 M9 7V4h6v3 M6 7l1 13h10l1-13 M10 11v6 M14 11v6"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 12"><path d="M1 6h20 M16 1l5 5-5 5"/></symbol>
+  </svg>
+
+  <header class="site-header">
+    <div class="hdr-inner">
+      <div class="brand">
+        <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+          <rect class="bm-back" x="9" y="3" width="19" height="23" rx="3"/>
+          <rect class="bm-front" x="4" y="7" width="19" height="23" rx="3"/>
+          <path class="bm-line" d="M8.5 14h10 M8.5 24h7"/>
+          <rect class="bm-redact" x="8.5" y="17.5" width="10" height="3" rx="1"/>
+        </svg>
+        <div class="brand-text">
+          <h1 class="brand-name"><span data-app-name></span></h1>
+          <p class="brand-tag">Swap out real names before you paste anywhere public.</p>
+        </div>
+      </div>
+      <script src="src/app-name.js"></script>
+
+      <div class="hdr-controls">
+        <div class="motion-zone">
+          <label class="switch motion">
+            <input type="checkbox" data-motion-toggle>
+            <span class="track" aria-hidden="true"><span class="thumb"></span></span>Reduce motion
+          </label>
+          <p class="motion-note" id="motion-note">Your device already reduces motion.</p>
+        </div>
+
+        <!-- A <div>, not a <label>: once dropdown.js enhances this the real control is a <button>,
+             which a wrapping label would not name or focus. Markup matches the theme-service site header. -->
+        <div class="theme-console">
+          <span class="tc-cap" id="tc-cap">Theme</span>
+          <span class="tc-lamps" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+          <select data-theme-select data-dropdown data-dropdown-anchor=".theme-console"
+                  data-dropdown-swatch-style="dots" aria-labelledby="tc-cap"></select>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main id="main" class="layout">
+    <section class="card workspace" id="workspace" aria-labelledby="ws-title">
+      <h2 class="card-title" id="ws-title" tabindex="-1">Your text</h2>
+
+      <div class="ws-actions">
+        <button type="button" class="btn btn-solid a-pink" id="replace">Replace</button>
+        <button type="button" class="btn btn-outline a-blue" id="copy">Copy result</button>
+        <button type="button" class="btn btn-ghost" id="clear">Clear</button>
+        <label class="choice remove-links"><input type="checkbox" id="remove-links">Remove links</label>
+      </div>
+      <p class="status-line" id="ws-status"></p>
+
+      <div class="sheet" id="sheet" data-ac-tabs>
+        <div class="sheet-tabs" role="tablist" aria-label="Text view">
+          <button type="button" class="sheet-tab" role="tab" id="tab-original"
+                  aria-selected="true" aria-controls="panel-original">Original</button>
+          <button type="button" class="sheet-tab" role="tab" id="tab-replaced"
+                  aria-selected="false" aria-controls="panel-replaced" tabindex="-1">Replaced<span class="stale-dot" aria-hidden="true"></span></button>
+        </div>
+        <div class="sheet-body">
+          <!-- No tabindex on this panel: its first child is the labelled editor, so Tab lands there directly. -->
+          <div class="sheet-panel" role="tabpanel" id="panel-original" aria-labelledby="tab-original" data-empty>
+            <div class="doc editor fx-scroll" id="source" contenteditable="true" role="textbox"
+                 aria-multiline="true" aria-labelledby="tab-original" aria-describedby="source-hint"
+                 aria-placeholder="Paste or type your text"
+                 spellcheck="false" autocapitalize="off" autocorrect="off" translate="no"
+                 data-gramm="false" data-gramm_editor="false" data-enable-grammarly="false"></div>
+            <p class="placeholder" aria-hidden="true">Paste or type your text. Formatting comes along.</p>
+          </div>
+          <div class="sheet-panel doc-scroll fx-scroll" role="tabpanel" id="panel-replaced"
+               aria-labelledby="tab-replaced" tabindex="0" hidden>
+            <p class="empty-state" id="replaced-empty">Nothing here yet. Put your text in Original, then press Replace.</p>
+            <div class="doc output" id="result" translate="no"></div>
+          </div>
+        </div>
+      </div>
+      <p class="hint" id="source-hint">Formatting is kept. Your text is never saved.</p>
+    </section>
+
+    <section class="card swaps" id="swaps" aria-labelledby="swaps-title">
+      <h2 class="card-title" id="swaps-title">Swap list</h2>
+
+      <form class="add-form" id="add-form" novalidate>
+        <div class="ac-field field" id="add-find-field">
+          <label class="field-label ac-field__label" for="add-find">Find</label>
+          <input class="input" id="add-find" type="text" autocomplete="off" spellcheck="false"
+                 autocapitalize="off" autocorrect="off" translate="no" data-gramm="false">
+          <p class="ac-field__error" role="alert"></p>
+        </div>
+        <div class="ac-field field" id="add-replace-field">
+          <label class="field-label ac-field__label" for="add-replace">Replace with</label>
+          <input class="input" id="add-replace" type="text" autocomplete="off" spellcheck="false"
+                 autocapitalize="off" autocorrect="off" translate="no" data-gramm="false">
+          <p class="ac-field__hint">Leave empty to delete it.</p>
+        </div>
+        <button type="submit" class="btn btn-solid a-green add-button">Add</button>
+      </form>
+
+      <div class="list-head">
+        <label class="choice use-all"><input type="checkbox" id="use-all">Use all</label>
+        <p class="list-meta" id="list-meta">
+          <span class="list-count" id="list-count"></span>
+          <span class="undo" id="undo-zone" hidden>
+            <span class="undo-text" id="undo-text"></span>
+            <button type="button" class="btn btn-ghost btn-small" id="undo">Undo</button>
+          </span>
+        </p>
+      </div>
+      <p class="notice warn" id="storage-note" hidden>
+        This browser isn’t letting the page save, so your list will be gone when you leave.
+      </p>
+      <p class="empty-list" id="empty-list">No swaps yet. Add a name above, and what it should become.</p>
+      <ul class="swap-list fx-scroll" id="swap-list" aria-labelledby="swaps-title"></ul>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p>Your text stays in this tab and disappears when you close it. Your swap list is saved in this browser only.
+      Nothing is sent anywhere.</p>
+  </footer>
+
+  <!-- One polite live region for the whole page, present and empty from the start. -->
+  <p class="visually-hidden" id="announcer" role="status"></p>
+
+  <template id="swap-row">
+    <li class="swap">
+      <input type="checkbox" class="swap-toggle">
+      <label class="swap-label">
+        <span class="swap-find"></span>
+        <svg class="swap-arrow" viewBox="0 0 24 12" aria-hidden="true" focusable="false"><use href="#i-arrow"/></svg>
+        <span class="visually-hidden swap-joiner"></span>
+        <span class="swap-value"></span>
+      </label>
+      <span class="swap-actions">
+        <button type="button" class="btn-icon swap-edit">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#i-edit"/></svg>
+        </button>
+        <button type="button" class="btn-icon swap-delete">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#i-trash"/></svg>
+        </button>
+      </span>
+    </li>
+  </template>
+
+  <template id="swap-editor">
+    <li class="swap is-editing">
+      <form class="edit-form" novalidate>
+        <div class="ac-field field edit-find-field">
+          <label class="field-label ac-field__label edit-find-label">Find</label>
+          <input class="input edit-find" type="text" autocomplete="off" spellcheck="false"
+                 autocapitalize="off" autocorrect="off" translate="no" data-gramm="false">
+          <p class="ac-field__error" role="alert"></p>
+        </div>
+        <div class="ac-field field edit-replace-field">
+          <label class="field-label ac-field__label edit-replace-label">Replace with</label>
+          <input class="input edit-replace" type="text" autocomplete="off" spellcheck="false"
+                 autocapitalize="off" autocorrect="off" translate="no" data-gramm="false">
+          <p class="ac-field__hint">Leave empty to delete it.</p>
+        </div>
+        <div class="edit-actions">
+          <button type="submit" class="btn btn-solid a-green">Save</button>
+          <button type="button" class="btn btn-ghost edit-cancel">Cancel</button>
+        </div>
+      </form>
+    </li>
+  </template>
+
+  <!-- External scripts only (the CSP blocks inline ones). -->
+  <script src="assets/theme/dropdown.js"></script>
+  <script src="assets/theme/theme-select.js"></script>
+  <script src="assets/a11y/tabs.js"></script>
+  <script src="assets/a11y/field.js"></script>
+  <script src="assets/a11y/live-region.js"></script>
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>

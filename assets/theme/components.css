@@ -1,0 +1,376 @@
+/* =============================================================================
+   Theme Service — components.css (finalized). Class-based component styles,
+   written purely against tokens. Opt-in: add these classes to your markup and
+   they pick up whatever theme is active (theme.css). Every interactive element
+   defines default / hover / active / focus-visible / disabled / expanded states.
+   Motion is gated through --motion so the "disable animations" hook and OS
+   reduced-motion both fully stop it (see effects.css).
+   ============================================================================= */
+
+/* ---- Structural tokens (non-color) ---- */
+:root {
+  --font-ui: "Trebuchet MS", "Segoe UI", Verdana, system-ui, sans-serif;
+  --font-mono: "Consolas", "Courier New", ui-monospace, monospace;
+  --radius: 10px;
+  --radius-sm: 6px;
+  --radius-pill: 999px;
+  --dur: calc(var(--motion) * 0.15s);   /* transitions collapse to 0 when motion off */
+  --press-y: calc(var(--motion) * 1px);  /* :active nudge, 0 when motion off */
+  --press-s: calc(1 - (var(--motion) * 0.02));
+}
+
+/* ---- Optional themed surface helpers ---- */
+.surface {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-ui);
+  border-radius: var(--radius);
+}
+.surface :is(h1,h2,h3,h4,h5,h6) { margin: 0; line-height: 1.15; }
+.panel {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px;
+}
+
+/* =============================================================================
+   Typography — neon hierarchy (pink→green→blue→purple), each with its glow.
+   Each level takes --accent-h1 … h4, which are those four unless the theme picks
+   other accents for its headings: the accents double as the error and link colors,
+   so a theme can't just recolor them to change a heading.
+   ============================================================================= */
+.t-h1 { font-size: 28px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase;
+  color: var(--accent-h1, var(--accent-pink));   text-shadow: var(--tglow-h1); font-style: italic; }
+.t-h2 { font-size: 21px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase;
+  color: var(--accent-h2, var(--accent-green));  text-shadow: var(--tglow-h2); }
+.t-h3 { font-size: 17px; font-weight: 800; letter-spacing: 0.5px;
+  color: var(--accent-h3, var(--accent-blue));   text-shadow: var(--tglow-h3); }
+.t-h4 { font-size: 14px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;
+  color: var(--accent-h4, var(--accent-purple)); text-shadow: var(--tglow-h4-sm); }
+.t-body { font-size: 14px; line-height: 1.5; color: var(--text); }
+.t-muted { font-size: 13px; line-height: 1.5; color: var(--text-muted); }
+.t-mono { font-family: var(--font-mono); font-size: 12px; color: var(--text-muted); }
+
+a.t-link {
+  color: var(--accent-blue);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-shadow: var(--tglow-blue-sm);
+  border-radius: 3px;
+  transition: filter var(--dur) ease;
+}
+a.t-link:hover { filter: brightness(1.15) saturate(1.1); }
+a.t-link:active { filter: brightness(0.95); }
+
+/* =============================================================================
+   Universal focus-visible ring — high-contrast, non-color-only (ring + offset).
+   Scoped to our component classes so it never rings arbitrary host-app elements.
+   --focus-ring is validated >=3:1 against bg and panel in every theme.
+   ============================================================================= */
+:is(.btn, .btn-icon, .drop-toggle, .tab, .chip-toggle):focus-visible,
+.input:focus-visible, .textarea:focus-visible, .select:focus-visible,
+a.t-link:focus-visible,
+.tip[tabindex]:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 5px color-mix(in srgb, var(--focus-ring) 30%, transparent);
+}
+.switch input:focus-visible + .track,
+.choice input:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+/* =============================================================================
+   Buttons
+   ============================================================================= */
+.btn {
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  padding: 9px 16px;
+  border-radius: var(--radius-sm);
+  border: 2px solid transparent;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: filter var(--dur) ease, box-shadow var(--dur) ease,
+              background var(--dur) ease, transform var(--dur) ease, color var(--dur) ease;
+}
+.btn:active { transform: translateY(var(--press-y)) scale(var(--press-s)); }
+.btn:disabled, .btn[aria-disabled="true"] {
+  cursor: not-allowed;
+  filter: none;
+  transform: none;
+  background: transparent;
+  color: var(--text-muted);
+  border-color: var(--border);
+  box-shadow: none;
+  text-shadow: none;
+  opacity: 0.85;
+}
+
+/* Solid (filled neon) — one per accent. Text uses --on-* (AA validated on the fill). */
+.btn-solid { color: var(--on-pink); }
+.btn-solid.a-pink   { background: var(--accent-pink);   color: var(--on-pink);   box-shadow: var(--bglow-pink); }
+.btn-solid.a-green  { background: var(--accent-green);  color: var(--on-green);  box-shadow: var(--bglow-green); }
+.btn-solid.a-blue   { background: var(--accent-blue);   color: var(--on-blue);   box-shadow: var(--bglow-blue); }
+.btn-solid.a-purple { background: var(--accent-purple); color: var(--on-purple); box-shadow: var(--bglow-purple); }
+.btn-solid:hover:not(:disabled) { filter: brightness(1.1) saturate(1.05); }
+.btn-solid.a-pink:hover:not(:disabled)   { box-shadow: var(--bglow-pink-hi); }
+.btn-solid.a-green:hover:not(:disabled)  { box-shadow: var(--bglow-green-hi); }
+.btn-solid.a-blue:hover:not(:disabled)   { box-shadow: var(--bglow-blue-hi); }
+.btn-solid.a-purple:hover:not(:disabled) { box-shadow: var(--bglow-purple-hi); }
+
+/* Outline (lit tube) — transparent fill, neon border+text, fills on hover. */
+.btn-outline { background: transparent; }
+.btn-outline.a-pink   { border-color: var(--accent-pink);   color: var(--accent-pink);   text-shadow: var(--tglow-pink);   box-shadow: var(--bglow-pink); }
+.btn-outline.a-green  { border-color: var(--accent-green);  color: var(--accent-green);  text-shadow: var(--tglow-green);  box-shadow: var(--bglow-green); }
+.btn-outline.a-blue   { border-color: var(--accent-blue);   color: var(--accent-blue);   text-shadow: var(--tglow-blue);   box-shadow: var(--bglow-blue); }
+.btn-outline.a-purple { border-color: var(--accent-purple); color: var(--accent-purple); text-shadow: var(--tglow-purple); box-shadow: var(--bglow-purple); }
+.btn-outline.a-pink:hover:not(:disabled)   { background: color-mix(in srgb, var(--accent-pink) 16%, transparent);   box-shadow: var(--bglow-pink-hi); }
+.btn-outline.a-green:hover:not(:disabled)  { background: color-mix(in srgb, var(--accent-green) 16%, transparent);  box-shadow: var(--bglow-green-hi); }
+.btn-outline.a-blue:hover:not(:disabled)   { background: color-mix(in srgb, var(--accent-blue) 16%, transparent);   box-shadow: var(--bglow-blue-hi); }
+.btn-outline.a-purple:hover:not(:disabled) { background: color-mix(in srgb, var(--accent-purple) 16%, transparent); box-shadow: var(--bglow-purple-hi); }
+
+/* Ghost / secondary — quiet, uses text color + subtle border. */
+.btn-ghost {
+  background: transparent;
+  color: var(--text);
+  border-color: var(--border-strong);
+}
+.btn-ghost:hover:not(:disabled) { background: color-mix(in srgb, var(--text) 8%, transparent); border-color: var(--accent-blue); }
+
+/* Icon button — square, accent-tinted. */
+.btn-icon {
+  width: 34px; height: 34px; padding: 0;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-strong);
+  background: color-mix(in srgb, var(--accent-blue) 10%, transparent);
+  color: var(--accent-blue);
+  font-size: 15px;
+  cursor: pointer;
+  display: inline-flex; align-items: center;
+  transition: filter var(--dur) ease, box-shadow var(--dur) ease, background var(--dur) ease, transform var(--dur) ease;
+}
+.btn-icon:hover:not(:disabled) { background: color-mix(in srgb, var(--accent-blue) 20%, transparent); box-shadow: var(--bglow-blue); }
+.btn-icon:active:not(:disabled) { transform: scale(calc(1 - var(--motion) * 0.06)); }
+.btn-icon:disabled { cursor: not-allowed; opacity: 0.55; }
+
+/* Loading spinner (motion-gated) */
+.btn .spinner {
+  width: 13px; height: 13px; border-radius: 50%;
+  border: 2px solid color-mix(in srgb, currentColor 35%, transparent);
+  border-top-color: currentColor;
+  animation: btn-spin 0.7s linear infinite;
+}
+@keyframes btn-spin { to { transform: rotate(360deg); } }
+[data-motion="off"] .spinner { animation: none; }
+@media (prefers-reduced-motion: reduce) { .spinner { animation: none; } }
+
+/* =============================================================================
+   Inputs, textarea, select, labels
+   ============================================================================= */
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field-label {
+  font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
+  color: var(--accent-green); text-shadow: var(--tglow-green-sm);
+}
+.field-label.sub { color: var(--accent-purple); text-shadow: var(--tglow-purple-sm); }
+
+.input, .textarea, .select {
+  font-family: var(--font-ui);
+  font-size: 14px;
+  color: var(--text);
+  background: color-mix(in srgb, var(--accent-purple) 8%, var(--bg-panel));
+  border: 2px solid var(--accent-purple);
+  border-radius: var(--radius-sm);
+  padding: 9px 11px;
+  box-shadow: inset 0 0 8px color-mix(in srgb, var(--accent-purple) calc(35% * var(--glow-strength)), transparent);
+  transition: border-color var(--dur) ease, box-shadow var(--dur) ease;
+}
+.textarea { min-height: 80px; resize: vertical; }
+.input::placeholder, .textarea::placeholder { color: var(--text-muted); opacity: 1; }
+.input:hover:not(:disabled), .textarea:hover:not(:disabled), .select:hover:not(:disabled) {
+  border-color: var(--accent-blue);
+}
+.input:focus, .textarea:focus, .select:focus {
+  outline: none; /* replaced by the stronger focus-visible ring rule */
+  border-color: var(--accent-blue);
+  box-shadow: inset 0 0 8px color-mix(in srgb, var(--accent-blue) calc(40% * var(--glow-strength)), transparent),
+              0 0 10px color-mix(in srgb, var(--accent-blue) calc(55% * var(--glow-strength)), transparent);
+}
+.input:disabled, .textarea:disabled, .select:disabled {
+  cursor: not-allowed; opacity: 0.6;
+  border-color: var(--border); box-shadow: none;
+  color: var(--text-muted);
+  background: color-mix(in srgb, var(--text) 4%, var(--bg-panel));
+}
+/* Native select caret */
+.select {
+  appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, var(--accent-blue) 50%),
+                    linear-gradient(135deg, var(--accent-blue) 50%, transparent 50%);
+  background-position: right 14px center, right 9px center;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+  padding-right: 30px;
+}
+
+/* Input with trailing icon button */
+.input-group { position: relative; display: flex; align-items: center; }
+.input-group .input { width: 100%; padding-right: 42px; }
+.input-group .btn-icon {
+  position: absolute; right: 4px; width: 28px; height: 28px; font-size: 13px;
+  background: transparent; border: none; color: var(--accent-blue);
+}
+.input-group .btn-icon:hover:not(:disabled) { background: color-mix(in srgb, var(--accent-blue) 18%, transparent); box-shadow: none; }
+
+/* =============================================================================
+   Custom dropdown / listbox (open state, rows, hover, empty)
+   ============================================================================= */
+.drop { position: relative; display: inline-block; }
+.drop-toggle {
+  font-family: var(--font-ui); font-size: 13px; font-weight: 700;
+  display: inline-flex; align-items: center; gap: 8px;
+  background: color-mix(in srgb, var(--accent-blue) 8%, var(--bg-panel));
+  color: var(--text);
+  border: 2px solid var(--accent-blue);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px; cursor: pointer;
+  transition: box-shadow var(--dur) ease, background var(--dur) ease;
+}
+.drop-toggle:hover { background: color-mix(in srgb, var(--accent-blue) 16%, transparent); box-shadow: var(--bglow-blue); }
+.drop-toggle .caret { transition: transform var(--dur) ease; }
+.drop-toggle[aria-expanded="true"] { box-shadow: var(--bglow-blue-hi); }
+.drop-toggle[aria-expanded="true"] .caret { transform: rotate(180deg); }
+.drop-panel {
+  position: absolute; top: calc(100% + 6px); left: 0; min-width: 240px; z-index: 20;
+  background: var(--bg-elevated);
+  border: 2px solid var(--accent-blue);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 8px 24px color-mix(in srgb, #000 45%, transparent), var(--bglow-blue);
+  max-height: 220px; overflow-y: auto; padding: 4px;
+}
+.drop-panel[hidden] { display: none; }
+.drop-row {
+  display: flex; flex-direction: column; gap: 2px;
+  padding: 8px 10px; border-radius: 4px; cursor: pointer;
+  border: 1px solid transparent;
+  transition: background var(--dur) ease;
+}
+.drop-row + .drop-row { border-top: 1px solid var(--border); }
+.drop-row:hover, .drop-row[aria-selected="true"] { background: color-mix(in srgb, var(--accent-blue) 12%, transparent); }
+.drop-row .primary { font-size: 13px; color: var(--text); }
+.drop-row .secondary { font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); }
+.drop-empty { padding: 14px; text-align: center; color: var(--text-muted); font-size: 12px; }
+
+/* =============================================================================
+   Radios, checkboxes, toggle switch
+   ============================================================================= */
+.choice { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font-size: 13px; color: var(--text); }
+.choice input[type="radio"] { accent-color: var(--accent-pink); width: 16px; height: 16px; cursor: pointer; }
+.choice input[type="checkbox"] { accent-color: var(--accent-green); width: 16px; height: 16px; cursor: pointer; }
+.choice input:disabled { cursor: not-allowed; }
+.choice:has(input:disabled) { color: var(--text-muted); cursor: not-allowed; }
+
+/* Toggle switch */
+.switch { position: relative; display: inline-flex; align-items: center; gap: 10px; cursor: pointer; font-size: 13px; color: var(--text); }
+.switch input { position: absolute; opacity: 0; width: 44px; height: 24px; margin: 0; cursor: pointer; }
+.switch .track {
+  width: 44px; height: 24px; border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--text) 12%, transparent);
+  border: 1px solid var(--border-strong);
+  position: relative; transition: background var(--dur) ease, border-color var(--dur) ease, box-shadow var(--dur) ease;
+}
+.switch .thumb {
+  position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%;
+  background: var(--text); transition: transform var(--dur) ease, background var(--dur) ease;
+}
+.switch input:checked + .track { background: var(--accent-green); border-color: var(--accent-green); box-shadow: var(--bglow-green); }
+.switch input:checked + .track .thumb { transform: translateX(20px); background: var(--on-green); }
+.switch input:disabled + .track { opacity: 0.5; }
+
+/* =============================================================================
+   Surfaces: field group, dashed result box
+   ============================================================================= */
+.group {
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--accent-purple) 5%, transparent);
+  border-radius: var(--radius-sm);
+  padding: 14px; display: flex; flex-direction: column; gap: 12px;
+}
+.result {
+  border: 2px dashed var(--accent-pink);
+  background: color-mix(in srgb, var(--accent-pink) 8%, transparent);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+}
+.result .result-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--accent-pink); text-shadow: var(--tglow-pink-sm); }
+.result .result-url { font-family: var(--font-mono); font-size: 12px; color: var(--accent-blue); word-break: break-all; }
+
+/* =============================================================================
+   Feedback: notices/alerts (info·success·warn·error), status, badges, tooltip.
+   Denser (near-opaque over panel) so busy backdrops can't bleed through the text.
+   ============================================================================= */
+.notice {
+  display: flex; align-items: flex-start; gap: 10px;
+  border-radius: var(--radius-sm); padding: 10px 12px; font-size: 13px;
+  border: 1px solid;
+}
+.notice .icon { font-weight: 900; }
+.notice.info    { color: var(--accent-blue);   border-color: var(--accent-blue);   background: color-mix(in srgb, var(--accent-blue) 16%, var(--bg-panel));   text-shadow: var(--tglow-blue-sm); }
+.notice.success { color: var(--accent-green);  border-color: var(--accent-green);  background: color-mix(in srgb, var(--accent-green) 16%, var(--bg-panel));  text-shadow: var(--tglow-green-sm); }
+.notice.warn    { color: var(--accent-purple); border-color: var(--accent-purple); background: color-mix(in srgb, var(--accent-purple) 16%, var(--bg-panel)); text-shadow: var(--tglow-purple-sm); }
+.notice.error   { color: var(--accent-pink);   border-color: var(--accent-pink);   background: color-mix(in srgb, var(--accent-pink) 16%, var(--bg-panel));   text-shadow: var(--tglow-pink-sm); }
+
+.status { font-size: 12px; }
+.status.ok  { color: var(--accent-green); text-shadow: var(--tglow-green-sm); }
+.status.err { color: var(--accent-pink);  text-shadow: var(--tglow-pink-sm); }
+.status.mut { color: var(--text-muted); }
+
+.badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 11px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;
+  padding: 3px 9px; border-radius: var(--radius-pill);
+  border: 1px solid var(--accent-purple); color: var(--accent-purple);
+  background: color-mix(in srgb, var(--accent-purple) 18%, var(--bg-panel));
+}
+.badge.solid { background: var(--accent-purple); color: var(--on-purple); border-color: transparent; }
+
+.chip-toggle {
+  font-size: 12px; font-weight: 700; padding: 5px 12px; border-radius: var(--radius-pill);
+  border: 1px solid var(--border-strong); background: transparent; color: var(--text); cursor: pointer;
+  transition: background var(--dur) ease, border-color var(--dur) ease, box-shadow var(--dur) ease;
+}
+.chip-toggle[aria-pressed="true"] { border-color: var(--accent-pink); color: var(--accent-pink); background: color-mix(in srgb, var(--accent-pink) 20%, var(--bg-panel)); text-shadow: var(--tglow-pink-sm); box-shadow: var(--bglow-pink); }
+
+/* Tooltip (CSS-only, focus/hover reveal) */
+.tip { position: relative; display: inline-flex; }
+.tip .tip-body {
+  position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%);
+  background: var(--bg-elevated); color: var(--text);
+  border: 1px solid var(--accent-blue); border-radius: var(--radius-sm);
+  padding: 6px 10px; font-size: 12px; white-space: nowrap;
+  box-shadow: var(--bglow-blue); opacity: 0; pointer-events: none;
+  transition: opacity var(--dur) ease;
+}
+.tip:hover .tip-body, .tip:focus-within .tip-body { opacity: 1; }
+
+/* =============================================================================
+   Tabs
+   ============================================================================= */
+.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border); }
+.tab {
+  font-family: var(--font-ui); font-size: 13px; font-weight: 700;
+  background: transparent; border: none; color: var(--text-muted);
+  padding: 8px 14px; cursor: pointer; border-bottom: 2px solid transparent;
+  transition: color var(--dur) ease, border-color var(--dur) ease;
+}
+.tab:hover { color: var(--text); }
+.tab[aria-selected="true"] { color: var(--accent-blue); border-bottom-color: var(--accent-blue); text-shadow: var(--tglow-blue-sm); }

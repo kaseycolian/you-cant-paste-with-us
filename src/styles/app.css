@@ -1,0 +1,516 @@
+/* =============================================================================
+   You Can't Paste with Us — app styles.
+
+   Colors come only from theme tokens (theme-service). Accent colors used as
+   TEXT are mixed 80% toward --text, which keeps them readable on light themes
+   too (a11y-library pitfall: "An accent color used as text fails on a light
+   background"). Every duration is multiplied by --motion, which is 0 when the
+   device or the Reduce motion switch asks for stillness.
+   ============================================================================= */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html {
+  scrollbar-gutter: stable;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+/* Any author `display` would otherwise beat the hidden attribute. */
+[hidden] { display: none !important; }
+
+/* Kept out of layout. `hidden` does nothing on an <svg>. */
+.sprite { position: absolute; width: 0; height: 0; overflow: hidden; }
+.sprite path, svg use { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* a11y-library: visually-hidden */
+.visually-hidden {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip-path: inset(50%) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+/* a11y-library: skip-link. Clipped to 1px until focused; :focus rather than
+   :focus-visible, so it also shows when focus arrives by script. */
+.skip-link {
+  position: absolute; z-index: 1000; top: 0; left: 0;
+  width: 1px; height: 1px; overflow: hidden; white-space: nowrap;
+  clip-path: inset(50%); padding: 0; border: 0;
+  background: var(--bg-panel); color: var(--text);
+  font-size: 14px; font-weight: 700; text-decoration: none;
+}
+.skip-link:focus {
+  width: auto; height: auto; min-height: 44px; overflow: visible; clip-path: none;
+  display: inline-flex; align-items: center; padding: 0.5rem 1rem;
+  border: 2px solid var(--accent-blue); border-radius: 0 0 var(--radius-sm) 0;
+  outline: 3px solid var(--focus-ring); outline-offset: -3px;
+}
+
+.file-note { margin: 12px; }
+
+kbd, code {
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+}
+
+/* =============================================================================
+   Layout
+   ============================================================================= */
+.layout {
+  flex: 1;
+  width: 100%;
+  max-width: 1480px;
+  margin: 0 auto;
+  padding: clamp(16px, 3vw, 32px);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: clamp(16px, 2.5vw, 28px);
+  align-items: start;
+}
+@media (min-width: 1024px) {
+  .layout { grid-template-columns: minmax(0, 1fr) minmax(20rem, 26rem); }
+}
+
+.card {
+  min-width: 0;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: clamp(14px, 2vw, 22px);
+}
+
+.card-title {
+  margin: 0 0 14px;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--accent-h2, var(--accent-green)) 80%, var(--text));
+  text-shadow: var(--tglow-green-sm);
+  border-radius: 4px;
+}
+/* The skip link's target. The ring is the only sign the jump happened. */
+.card-title:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 4px; }
+.card-title:focus:not(:focus-visible) { outline: none; }
+
+/* Buttons here are at least 44px tall, whatever components.css says. */
+.btn { min-height: 44px; justify-content: center; }
+.btn-small { min-height: 36px; padding: 6px 12px; font-size: 12px; }
+.choice { min-height: 44px; }
+
+/* Soft-disabled: still focusable and still named, so it can say why it won't
+   act. Dashed border and muted text, so it doesn't rely on color alone. The
+   selectors out-rank .btn-solid.a-pink and its :hover glow. */
+.btn.btn-solid[aria-disabled="true"],
+.btn.btn-outline[aria-disabled="true"],
+.btn.btn-solid[aria-disabled="true"]:hover,
+.btn.btn-outline[aria-disabled="true"]:hover {
+  background: transparent;
+  color: var(--text-muted);
+  border-color: var(--border-strong);
+  border-style: dashed;
+  box-shadow: none;
+  text-shadow: none;
+  filter: none;
+  transform: none;
+  cursor: not-allowed;
+  opacity: 1;
+}
+
+/* =============================================================================
+   Workspace
+   ============================================================================= */
+.ws-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+.remove-links { margin-left: auto; padding-inline: 4px; }
+
+/* Always two lines tall, so a message arriving or growing never moves the sheet. */
+.status-line {
+  margin: 10px 0 12px;
+  min-height: calc(2 * 1.45em);
+  font-size: 13.5px;
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+
+.sheet { position: relative; }
+
+.sheet-tabs { display: flex; gap: 6px; }
+
+/* Folder tabs sitting on the sheet. The selected one is joined to it and lit
+   along the top; both states keep the same borders so nothing reflows when the
+   selection moves (a11y-library pitfall on tab strips). */
+.sheet-tab {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  margin-bottom: -1px;
+  padding: 8px 18px;
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-top: 3px solid transparent;
+  border-bottom: 0;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  cursor: pointer;
+  transition: color var(--dur) ease, background-color var(--dur) ease, border-color var(--dur) ease;
+}
+@media (hover: hover) { .sheet-tab:hover { color: var(--text); } }
+.sheet-tab[aria-selected="true"] {
+  z-index: 1;
+  color: var(--text);
+  background: var(--bg-elevated);
+  border-color: var(--border-strong);
+  border-top-color: var(--accent-blue);
+  box-shadow: 0 -4px 12px -6px color-mix(in srgb, var(--accent-blue) calc(60% * var(--glow-strength)), transparent);
+}
+.sheet-tab:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
+
+/* Space is kept for the dot either way; only its fill changes. */
+.stale-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: transparent;
+  transition: background-color var(--dur) ease;
+}
+.sheet-tab[data-stale] .stale-dot { background: var(--accent-pink); }
+
+/* The sheet keeps its height whatever it holds, so switching views, or a
+   result arriving, never moves anything on the page. */
+.sheet-body {
+  position: relative;
+  height: clamp(14rem, 55svh, 42rem);
+  min-height: 12rem;
+  overflow: hidden;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-strong);
+  border-radius: 0 var(--radius) var(--radius) var(--radius);
+}
+@media (min-width: 1024px) and (pointer: fine) {
+  .sheet-body { resize: vertical; }
+}
+
+.sheet-panel { position: relative; height: 100%; }
+.sheet-panel:not([hidden]) { animation: view-in calc(var(--motion) * 180ms) ease-out; }
+@keyframes view-in { from { opacity: 0; } }
+
+.doc-scroll { overflow: auto; }
+.doc-scroll:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: -3px; }
+
+/* The document itself: the editor, and the replaced copy. Pasted content can't
+   escape it (containment), and its colors are neutralized ON SCREEN ONLY so
+   any paste is readable in any theme. The markup keeps the original colors,
+   and that is what gets copied. */
+.doc {
+  padding: 16px 18px;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--text);
+  overflow-wrap: anywhere;
+  contain: layout paint;
+  isolation: isolate;
+}
+.doc * {
+  color: inherit !important;
+  background-color: transparent !important;
+  border-color: var(--border-strong) !important;
+}
+.doc a {
+  color: color-mix(in srgb, var(--accent-blue) 80%, var(--text)) !important;
+  text-decoration: underline !important;
+  border-radius: 2px;
+}
+/* Links in the result are real tab stops, so they get the page's ring, not the
+   browser's hairline. The document's padding leaves room for it inside the clip. */
+.doc a:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 1px; }
+.doc img { max-width: 100%; height: auto; }
+.doc :is(p, ul, ol, pre, blockquote, table) { margin-block: 0 0.8em; }
+.doc pre, .doc code { font-family: var(--font-mono); }
+.doc table { border-collapse: collapse; }
+.doc :is(td, th) { padding: 2px 8px; vertical-align: top; }
+
+.editor {
+  height: 100%;
+  overflow: auto;
+  outline: none;
+  caret-color: var(--accent-pink);
+}
+.editor:focus { outline: 3px solid var(--focus-ring); outline-offset: -4px; }
+
+.placeholder {
+  position: absolute;
+  inset: 0 0 auto 0;
+  margin: 0;
+  padding: 16px 18px;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+.sheet-panel:not([data-empty]) .placeholder { display: none; }
+
+.empty-state {
+  margin: 0;
+  padding: 16px 18px 0;
+  color: var(--text-muted);
+}
+
+/* The words that were swapped, marked without touching the markup
+   (CSS Custom Highlight API), so nothing extra is copied. */
+::highlight(swap) {
+  /* Its own text color: a link's blue on this tint falls under 4.5:1 in some
+     themes, and --text on it clears 5.9:1 in all of them. */
+  color: var(--text);
+  background-color: color-mix(in srgb, var(--accent-green) 26%, transparent);
+  text-decoration: underline 2px color-mix(in srgb, var(--accent-green) 80%, var(--text));
+}
+
+.hint {
+  margin: 10px 0 0;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+/* =============================================================================
+   Swap list
+   ============================================================================= */
+.swaps { display: flex; flex-direction: column; }
+
+@media (min-width: 1024px) {
+  /* Beside the text: the card stays in view and the list scrolls inside it. */
+  .swaps {
+    position: sticky;
+    top: 16px;
+    max-height: calc(100svh - 32px);
+  }
+  .swap-list { flex: 1 1 auto; min-height: 0; overflow: auto; }
+}
+
+.add-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 4px 12px;
+}
+.add-form .field { gap: 6px; }
+.add-button { width: 100%; }
+
+@media (min-width: 700px) and (max-width: 1023px) {
+  .add-form { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; align-items: start; }
+  /* Lines up with the inputs: the label's line plus the field's gap. */
+  .add-button { width: auto; margin-top: 24px; }
+}
+
+.field-label {
+  color: color-mix(in srgb, var(--accent-green) 80%, var(--text));
+  font-size: 11.5px;
+}
+.input { min-height: 44px; width: 100%; }
+
+/* Reserved, so an error appearing doesn't push the list down. Empty, it is still
+   in the accessibility tree, which a role="alert" has to be for text landing in
+   it to be announced. */
+.ac-field__error,
+.ac-field__hint {
+  position: relative;
+  margin: 0;
+  min-height: calc(1.45em);
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+.ac-field__hint { color: var(--text-muted); }
+.ac-field__error {
+  padding-left: 1.2rem;
+  font-weight: 700;
+  color: color-mix(in srgb, var(--accent-pink) 80%, var(--text));
+}
+.ac-field__error:empty { padding-left: 0; }
+/* A shape, not a glyph, so it adds nothing to what is announced. */
+.ac-field__error:not(:empty)::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.25em;
+  width: 0.8rem;
+  height: 0.8rem;
+  background: currentColor;
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+}
+.ac-field--invalid .input { border-color: var(--accent-pink); border-width: 3px; }
+
+.list-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+.list-meta {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  min-width: 0;
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+.undo { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.undo-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.empty-list { margin: 10px 0 0; color: var(--text-muted); font-size: 14px; }
+
+.swap-list {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 2px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.swap {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0 10px;
+  padding: 0 6px 0 12px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+.swap-toggle {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--accent-green);
+  cursor: pointer;
+}
+.swap-toggle:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
+
+/* The whole entry, always in full: it wraps rather than cutting anything off.
+   The label is also the checkbox's hit area, 44px tall. */
+.swap-label {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 8px;
+  min-height: 44px;
+  padding: 8px 0;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+.swap-find { font-family: var(--font-mono); font-size: 14px; color: var(--text); }
+.swap-arrow { width: 18px; height: 9px; flex: none; color: var(--text-muted); }
+.swap-value { font-weight: 700; color: color-mix(in srgb, var(--accent-green) 80%, var(--text)); }
+.swap-value.is-empty { font-weight: 400; font-style: italic; color: var(--text-muted); }
+
+/* Off: muted and struck through, so it isn't carried by color alone. */
+.swap.is-off .swap-find { color: var(--text-muted); text-decoration: line-through; }
+.swap.is-off .swap-value { color: var(--text-muted); }
+
+.swap-actions { display: flex; gap: 2px; }
+.swap .btn-icon {
+  width: 44px;
+  height: 44px;
+  border-color: transparent;
+  background: transparent;
+  color: color-mix(in srgb, var(--accent-blue) 80%, var(--text));
+}
+.swap .btn-icon svg { width: 20px; height: 20px; }
+.swap .swap-delete { color: color-mix(in srgb, var(--accent-pink) 80%, var(--text)); }
+@media (hover: hover) {
+  .swap .btn-icon:hover { border-color: currentColor; background: color-mix(in srgb, currentColor 12%, transparent); box-shadow: none; }
+}
+
+.swap.is-editing {
+  display: block;
+  padding: 12px;
+  border-color: var(--accent-blue);
+}
+.edit-form { display: grid; gap: 4px; }
+.edit-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+
+/* =============================================================================
+   Footer
+   ============================================================================= */
+.site-footer {
+  padding: 8px clamp(16px, 3vw, 32px) 28px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+.site-footer p { max-width: 60ch; margin: 0 auto; }
+
+/* =============================================================================
+   Phones
+   ============================================================================= */
+@media (max-width: 620px) {
+  body { font-size: 16px; }
+  .ws-actions > #replace { flex: 1 1 100%; }
+  .ws-actions > .btn { flex: 1 1 auto; }
+  .remove-links { margin-left: 0; }
+  .sheet-tabs { display: grid; grid-template-columns: 1fr 1fr; }
+  .sheet-tab { justify-content: center; padding-inline: 10px; }
+  .sheet-body { height: clamp(14rem, 50svh, 30rem); }
+  .doc { font-size: 16px; padding: 14px; }
+  .placeholder, .empty-state { padding-inline: 14px; }
+  .swap { padding-left: 10px; gap: 0 8px; }
+}
+
+/* =============================================================================
+   Windows High Contrast. Forced colors drops color-mix, gradients and shadows,
+   and hands `transparent` borders back opaque, so every state cue built from
+   them is redrawn here in system colors.
+   ============================================================================= */
+@media (forced-colors: active) {
+  .card, .sheet-body, .swap { border-color: CanvasText; }
+  .sheet-tab { border-color: ButtonBorder; border-top-color: Canvas; }
+  .sheet-tab[aria-selected="true"] { border-color: CanvasText; border-top-color: Highlight; }
+  .stale-dot { forced-color-adjust: none; }
+  .sheet-tab[data-stale] .stale-dot { background: CanvasText; }
+
+  .btn.btn-solid[aria-disabled="true"],
+  .btn.btn-outline[aria-disabled="true"] { color: GrayText; border-color: GrayText; }
+
+  ::highlight(swap) { background-color: Mark; color: MarkText; }
+
+  .ac-field__error { color: CanvasText; }
+  .ac-field--invalid .input { border-color: CanvasText; }
+
+  /* The switch (a11y-library: switch): keep its geometry, color it with system colors. */
+  .switch .track { border-color: ButtonBorder; background: Canvas; }
+  .switch .thumb { forced-color-adjust: none; background: ButtonBorder; }
+  .switch input:checked + .track { forced-color-adjust: none; border-color: Highlight; background: Highlight; }
+  .switch input:checked + .track .thumb { background: Canvas; }
+
+  .doc * { border-color: CanvasText !important; }
+  .doc a { color: LinkText !important; }
+}

@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- Colors are Rink Classic's accents from assets/theme/theme.css (dark, then light):
+       a favicon is its own document and can't read the page's CSS variables. -->
+  <style>
+    .back { stroke: #3ceaff; }
+    .front { stroke: #ff2ec4; fill: #110620; }
+    .line { stroke: #bcadde; }
+    .redact { fill: #5bff3a; }
+    @media (prefers-color-scheme: light) {
+      .back { stroke: #0a6a9e; }
+      .front { stroke: #b60f86; fill: #ffffff; }
+      .line { stroke: #5f5080; }
+      .redact { fill: #1f7d2f; }
+    }
+  </style>
+  <g fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+    <rect class="back" x="9" y="3" width="19" height="23" rx="3"/>
+    <rect class="front" x="4" y="7" width="19" height="23" rx="3"/>
+    <path class="line" d="M8.5 13.5h10 M8.5 24.5h7"/>
+    <rect class="redact" x="8.5" y="17.3" width="10" height="3.4" rx="1" stroke="none"/>
+  </g>
+</svg>

@@ -1,0 +1,525 @@
+/* =============================================================================
+   Theme Service — dropdown.css. Accessible dropdown / listbox.
+
+   A themed port of the `dropdown` component from the a11y-component-examples
+   library. The BEHAVIOR is unchanged; the CLASS NAMES are this repo's, so the
+   selectors here do not match upstream's — see the mapping in dropdown.js, which
+   builds every element below.
+
+   Why this exists next to .select and .drop:
+     .select    the native <select>, restyled. Best default on mobile (OS picker).
+     .drop      styles only, for a listbox you wire yourself.
+     .dropdown  this. A full listbox with the keyboard, focus, positioning and
+                screen-reader model already solved, over a real <select>.
+
+   .drop and .dropdown are different components, not a typo. Nothing below styles
+   a bare .drop* selector, so the two never interfere.
+
+   It supports several list organizations, all authored on the <option>:
+     plain · icons (data-dropdown-icon) · color swatches (data-dropdown-swatch) ·
+     secondary text (data-dropdown-secondary) · <optgroup> hierarchies ·
+     disabled options · the empty state.
+
+   Accessibility invariants — do not "simplify" these away:
+     - The focused option carries a solid BORDER, not just a background wash.
+       A tint alone does not reach the 3:1 SC 1.4.11 asks of a state indicator.
+     - Selection shows a tick as well as a color, so it is never color-alone
+       (SC 1.4.1).
+     - Rows grow under (pointer: coarse), not at a width breakpoint — a finger
+       needs the target on a landscape tablet too.
+     - The forced-colors block rebuilds every cue that color-mix/opacity/glow
+       provide, because Windows High Contrast drops all three.
+
+   Fields use this repo's own .field / .field-label from components.css — the
+   upstream file ships its own .ac-field copies, which would collide here.
+
+   Every value is a theme token, so the control re-skins with the active theme.
+   Motion runs through --dur, which is already gated by --motion.
+   ============================================================================= */
+
+/* ---- wrapper -------------------------------------------------------------- */
+
+.dropdown {
+  position: relative;
+  display: block;
+  min-width: 0;
+}
+
+/* Mirrors the native select's own `hidden`, so app code toggling it keeps
+   working. Without !important the display:block above would defeat it. */
+.dropdown[hidden] { display: none !important; }
+
+/* The native <select> stays in the DOM as the value store — form submission,
+   .value reads and change handlers all still work — but is never shown. */
+.dropdown-native { display: none; }
+
+/* ---- trigger -------------------------------------------------------------- */
+
+/* Geometry and states mirror .select in components.css, so a page that mixes the
+   two reads as one control family: purple at rest, blue on hover and open. */
+.dropdown-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  /* SC 2.5.8's floor is 24px; 44px is the comfortable target. */
+  min-height: 44px;
+  padding: 7px 11px;
+  font-family: var(--font-ui);
+  font-size: 14px;
+  text-align: left;
+  color: var(--text);
+  background: color-mix(in srgb, var(--accent-purple) 8%, var(--bg-panel));
+  border: 2px solid var(--accent-purple);
+  border-radius: var(--radius-sm);
+  box-shadow: inset 0 0 8px color-mix(in srgb, var(--accent-purple) calc(35% * var(--glow-strength)), transparent);
+  cursor: pointer;
+  /* Prefixed first, standard last, so the standard property wins where both are
+     understood. Safari still needs the prefix; without it a slow double-click on
+     the trigger selects the value text instead of just reopening the panel. */
+  -webkit-user-select: none;
+  user-select: none;
+  transition: border-color var(--dur) ease, box-shadow var(--dur) ease, background var(--dur) ease;
+}
+.dropdown-toggle:hover { border-color: var(--accent-blue); }
+
+/* Same ring as every other control here — see the universal rule in
+   components.css. Repeated rather than referenced so this file stands alone. */
+.dropdown-toggle:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 5px color-mix(in srgb, var(--focus-ring) 30%, transparent);
+}
+.dropdown-toggle[aria-expanded="true"] {
+  border-color: var(--accent-blue);
+  background: color-mix(in srgb, var(--accent-blue) 10%, var(--bg-panel));
+  box-shadow: inset 0 0 8px color-mix(in srgb, var(--accent-blue) calc(40% * var(--glow-strength)), transparent),
+              var(--bglow-blue);
+}
+
+.dropdown-value {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dropdown-value-empty { color: var(--text-muted); }
+
+.dropdown-caret {
+  flex: none;
+  display: inline-flex;
+  color: var(--accent-blue);
+  transition: transform var(--dur) ease;
+}
+.dropdown-caret svg { width: 16px; height: 16px; }
+.dropdown-toggle[aria-expanded="true"] .dropdown-caret { transform: rotate(180deg); }
+
+/* ---- panel ---------------------------------------------------------------
+   position:fixed and, where supported, promoted to the top layer by the Popover
+   API. That is the fix for the most common way a custom dropdown breaks in a
+   real layout: an absolutely-positioned panel is clipped the moment an ancestor
+   has overflow:hidden or a transform, and no z-index rescues it.
+
+   The [popover] selector undoes the UA default, which centers the popover in the
+   viewport with its own border and padding.
+
+   Width, left/top and max-height are written inline by dropdown.js, which
+   anchors the panel to its trigger and flips it above when there is more room
+   there. Do not set them here. */
+
+.dropdown-panel,
+.dropdown-panel[popover] {
+  position: fixed;
+  inset: auto;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  color: var(--text);
+  font-family: var(--font-ui);
+  background: var(--bg-elevated);
+  border: 2px solid var(--accent-blue);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--bg) 70%, transparent), var(--bglow-blue);
+}
+.dropdown-panel:not([popover]):not([hidden]) { display: flex; }
+.dropdown-panel[hidden] { display: none; }
+
+.dropdown-list {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 4px;
+}
+
+/* ---- options -------------------------------------------------------------- */
+
+.dropdown-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 40px;
+  padding: 7px 10px;
+  border: 2px solid transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  scroll-margin: 4px;
+  transition: background var(--dur) ease;
+}
+
+/* Focus lands on the option itself (real DOM focus, not aria-activedescendant),
+   so :focus — not :focus-visible — is the state to style. The border is the
+   load-bearing part; the wash alone would not reach 3:1. */
+.dropdown-option:focus {
+  outline: none;
+  border-color: var(--focus-ring);
+  background: color-mix(in srgb, var(--accent-blue) 18%, transparent);
+}
+
+.dropdown-option[aria-selected="true"] {
+  color: var(--accent-blue);
+  font-weight: 700;
+  text-shadow: var(--tglow-blue-sm);
+}
+
+/* Selection shows a tick as well as a color, so it never rests on color alone. */
+.dropdown-check {
+  flex: none;
+  margin-left: auto;
+  opacity: 0;
+  color: var(--accent-blue);
+}
+.dropdown-option[aria-selected="true"] .dropdown-check { opacity: 1; }
+
+/* ---- decoration: icons, swatches, secondary text -------------------------- */
+
+.dropdown-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.3;
+}
+.dropdown-primary {
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* NOT aria-hidden in the JS: this is real information, so it belongs in the
+   option's accessible name. Muted, but never decorative. */
+.dropdown-secondary {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dropdown-option[aria-selected="true"] .dropdown-secondary { text-shadow: none; }
+
+.dropdown-icon {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  color: var(--accent-purple);
+}
+.dropdown-option[aria-selected="true"] .dropdown-icon { color: var(--accent-blue); }
+
+/* The one place a literal color is legitimate: a swatch comes from the author's
+   data, not from the stylesheet. */
+.dropdown-swatch {
+  flex: none;
+  display: inline-flex;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+}
+.dropdown-swatch > span { display: block; width: 9px; height: 18px; }
+
+/* ---- swatch style: dots (opt-in) ------------------------------------------
+   Add data-dropdown-swatch-style="dots" to the <select> to swap the contiguous
+   strip above for four glowing circles. Two places want this — the site header's
+   theme console, whose trigger already shows the palette as four .tc-lamps dots
+   (reading a row and then the trigger meant re-parsing the same four accents in
+   two different shapes), and the gallery card that documents that pattern.
+
+   :has() rather than a class, because dropdown.js builds .dropdown itself and the
+   <select> is its own descendant (it is moved inside the wrapper alongside the
+   toggle and panel) — so the author's attribute stays on the markup they wrote
+   and no JS has to copy it across.
+
+   The :has() is wrapped in :where() so it adds NO specificity. That is load-bearing,
+   not tidiness: these rules have to sit at the same rank as the default strip rules
+   they replace — winning only on source order — so that a page styling the swatch
+   through an ancestor still overrides them. Unwrapped, the selector below would
+   score (0,3,2) and silently outrank a host page's own `.some-console
+   .dropdown-swatch > span` (0,2,1), pinning its dots at this size through every
+   breakpoint instead of letting them step down to 6px and 5px. */
+:where(.dropdown:has(select[data-dropdown-swatch-style="dots"])) .dropdown-swatch {
+  gap: 5px;
+  border: 0; border-radius: 0;
+  /* The strip clipped its children to a rounded box. Dots need to glow past
+     their own edges, so the clip has to go with the border that motivated it. */
+  overflow: visible;
+}
+:where(.dropdown:has(select[data-dropdown-swatch-style="dots"])) .dropdown-swatch > span {
+  position: relative;
+  width: 7px; height: 7px; border-radius: 50%;
+}
+/* The header's lamps glow with box-shadow off var(--lamp). These dots can't: their
+   color is an inline style from the option's data, and no shadow property can read
+   a background. A pseudo-element can — `background: inherit` picks up that same
+   inline value — so a blurred copy of the dot becomes its halo.
+
+   It paints ON TOP of the dot rather than behind it, which needs no z-index and
+   so can't escape the row's stacking context: blurring a solid disc leaves the
+   center solid, so at 65% over its own color the core is unchanged and only the
+   spill past the edge reads.
+
+   inset:0 and 65% are not arbitrary — they reproduce the lamps' own
+   `0 0 5px color-mix(--lamp 65%, transparent)`. An earlier inset:-2px blew the
+   disc up to 11px BEFORE blurring, and the dots came out as blobs rather than
+   dots with halos. The glow must start at the dot's own edge, like a shadow.
+   Scaled by --glow-strength for the same reason every other glow here is. */
+:where(.dropdown:has(select[data-dropdown-swatch-style="dots"])) .dropdown-swatch > span::after {
+  content: '';
+  position: absolute; inset: 0;
+  border-radius: 50%;
+  background: inherit;
+  filter: blur(2.5px);
+  opacity: calc(.65 * var(--glow-strength, 1));
+}
+
+/* ---- console: a cap and the control in one pill (opt-in) -------------------
+   For a control whose label reads better AS PART OF the control than stacked
+   above it — a persistent instrument in a toolbar or a rail, rather than a field
+   in a form. The cap names it, a divider separates the two, and the pill draws
+   the border, radius and focus ring that the trigger would otherwise draw itself.
+
+   Markup — a <div>, NOT a <label>:
+
+     <div class="dropdown-console">
+       <span class="dropdown-console-cap" id="x-cap">Theme</span>
+       <select id="x" data-dropdown data-dropdown-anchor=".dropdown-console"
+               aria-labelledby="x-cap"></select>
+     </div>
+
+   A wrapping <label> would be wrong here and it is worth saying why: once
+   dropdown.js enhances the <select> the real control is a <button>, which a
+   <label> neither names nor focuses. aria-labelledby pointing at the cap is what
+   makes the trigger announce "Theme, <current value>", the way a native select
+   does. And if you ever hide the cap responsively, CLIP it — a name pointing at a
+   display:none element resolves to nothing.
+
+   data-dropdown-anchor sizes the open panel to the whole pill instead of to the
+   button inside it, so the list spans the cap too rather than starting partway
+   across what the user reads as one control.
+
+   A host page's own console (a sticky site header, say) is typically this same
+   pattern specialized further — its own identity color, a measured fixed width, its
+   own breakpoints. Such a page is expected to keep its own rules rather than extend
+   these, so that it can ship standalone; if you maintain both, keep them in step. */
+.dropdown-console {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  border-radius: var(--radius);
+  /* Clips the cap's tint to the pill's rounded corners. The panel is fixed and in
+     the top layer, so this cannot clip the open list. */
+  overflow: hidden;
+  cursor: pointer;
+  background: color-mix(in srgb, var(--accent-purple) 7%, var(--bg-elevated));
+  border: 1px solid color-mix(in srgb, var(--accent-purple) 50%, var(--border));
+  box-shadow: 0 0 calc(12px * var(--glow-strength, 1))
+              color-mix(in srgb, var(--accent-purple) 20%, transparent);
+  transition: border-color var(--dur) ease, box-shadow var(--dur) ease;
+}
+.dropdown-console:hover {
+  border-color: var(--accent-purple);
+  box-shadow: 0 0 calc(18px * var(--glow-strength, 1))
+              color-mix(in srgb, var(--accent-purple) 38%, transparent);
+}
+/* The trigger is the real control, so the ring belongs to the pill it fills.
+   Both selectors are live: the first once dropdown.js has enhanced it, the second
+   on the native <select> fallback if that script never loads. */
+.dropdown-console:has(.dropdown-toggle:focus-visible),
+.dropdown-console:has(select:focus-visible) {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+.dropdown-console:has(select:focus-visible) select { outline: none; }
+
+/* align-self: stretch, not a height — the cap's tinted panel and its divider run
+   the full height of whatever the trigger turns out to be, so the pill keeps the
+   44px touch target rather than being pinned to the cap's own line box. */
+.dropdown-console-cap {
+  display: flex;
+  align-items: center;
+  align-self: stretch;
+  flex: none;
+  padding: 0 11px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  background: color-mix(in srgb, var(--text) 6%, transparent);
+  border-right: 1px solid color-mix(in srgb, var(--accent-purple) 35%, var(--border));
+}
+
+/* Flat inside the pill: the shell already draws the border, radius and glow, so
+   the trigger contributes only its text and caret. The left padding matches the
+   right and is load-bearing, not decoration — when the trigger is expanded it
+   tints its own background, and at 0 that fill would begin exactly at the first
+   letter, so the value reads as jammed against its own highlight. */
+.dropdown-console .dropdown { flex: 1 1 auto; min-width: 0; align-self: stretch; }
+.dropdown-console .dropdown-toggle {
+  height: 100%;
+  padding: 0 11px;
+  gap: 8px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text);
+}
+.dropdown-console .dropdown-toggle[aria-expanded="true"] {
+  background: color-mix(in srgb, var(--accent-purple) 14%, transparent);
+  box-shadow: none;
+}
+/* The ring is drawn by the pill above, so the trigger must not draw its own. */
+.dropdown-console .dropdown-toggle:focus-visible { outline: none; box-shadow: none; }
+.dropdown-console .dropdown-caret { color: var(--accent-purple); }
+
+/* Native fallback, for when dropdown.js never loads. The bare <select> is still a
+   direct child of the pill then, so it has to go flat the same way the trigger
+   does — otherwise the cap sits against a second, nested control border. */
+.dropdown-console > select {
+  -webkit-appearance: none;
+  appearance: none;
+  flex: 1 1 auto;
+  min-width: 0;
+  align-self: stretch;
+  padding: 0 11px 0 11px;
+  border: 0;
+  background: transparent;
+  outline: none;
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.dropdown-console > select option { background: var(--bg-elevated); color: var(--text); }
+.dropdown-console > select optgroup { background: var(--bg-elevated); color: var(--text-muted); }
+
+@media (forced-colors: active) {
+  .dropdown-console { border: 1px solid CanvasText; }
+  .dropdown-console-cap { border-right: 1px solid CanvasText; }
+}
+
+/* ---- groups (<optgroup> hierarchies) -------------------------------------- */
+
+/* Matches .field-label — group headings and field labels are the same rank. */
+.dropdown-group-label {
+  padding: 7px 10px 4px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--accent-green);
+  text-shadow: var(--tglow-green-sm);
+}
+.dropdown-group + .dropdown-group {
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 1px solid var(--border);
+}
+
+/* ---- disabled ------------------------------------------------------------- */
+
+/* aria-disabled, not the disabled attribute, so the control stays focusable and
+   a keyboard user can reach it and hear why it is unavailable. */
+.dropdown-disabled .dropdown-toggle {
+  cursor: not-allowed;
+  opacity: 0.6;
+  color: var(--text-muted);
+  border-color: var(--border);
+  border-style: dashed;
+  background: color-mix(in srgb, var(--text) 4%, var(--bg-panel));
+  box-shadow: none;
+}
+.dropdown-option[aria-disabled="true"] {
+  cursor: not-allowed;
+  color: var(--text-muted);
+  opacity: 0.6;
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
+}
+
+/* ---- empty ---------------------------------------------------------------- */
+
+.dropdown-empty {
+  padding: 18px 12px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* ---- touch ---------------------------------------------------------------- */
+
+/* Keyed on the pointer rather than viewport width: a finger needs a bigger row
+   on a landscape tablet just as much as on a phone, and a mouse does not need
+   one just because the window is narrow. */
+@media (pointer: coarse) {
+  .dropdown-option { min-height: 44px; padding: 10px 12px; }
+  .dropdown-list { padding: 6px; }
+}
+
+/* ---- Windows High Contrast — always ship this ----------------------------- */
+
+/* forced-colors drops color-mix, glow and opacity, so every cue built from them
+   has to be rebuilt out of system colors. */
+@media (forced-colors: active) {
+  .dropdown-toggle,
+  .dropdown-panel,
+  .dropdown-panel[popover] {
+    border-color: ButtonBorder;
+  }
+  .dropdown-toggle:focus-visible { outline-color: CanvasText; }
+
+  .dropdown-option:focus {
+    background: Highlight;
+    color: HighlightText;
+    border-color: Highlight;
+    /* Load-bearing, and NOT a portability bug even though linters flag it as
+       unsupported in Safari: this whole block sits inside
+       @media (forced-colors: active), which Safari does not match either, so the
+       property is only ever read by engines that implement it. Removing it to
+       quiet the warning would break the cue on Windows — without it the engine
+       re-overrides the Highlight/HighlightText pair set just above, and the
+       focused row loses the one indicator High Contrast left it. */
+    forced-color-adjust: none;
+  }
+  .dropdown-option:focus .dropdown-primary,
+  .dropdown-option:focus .dropdown-secondary,
+  .dropdown-option:focus .dropdown-check,
+  .dropdown-option:focus .dropdown-icon {
+    color: HighlightText;
+  }
+
+  .dropdown-option[aria-disabled="true"] { color: GrayText; opacity: 1; }
+  .dropdown-disabled .dropdown-toggle {
+    color: GrayText;
+    border-color: GrayText;
+    opacity: 1;
+  }
+}

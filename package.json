@@ -1,0 +1,11 @@
+{
+  "name": "text-replacer",
+  "version": "1.0.0",
+  "description": "Swap real names for stand-ins in pasted text, keeping its formatting. No dependencies.",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "start": "node serve.mjs",
+    "test": "node --test \"test/*.test.js\""
+  }
+}

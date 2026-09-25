@@ -1,0 +1,5 @@
+body { font: 15px/1.5 system-ui, sans-serif; margin: 2rem; max-width: 60rem; color: #1a1a1a; background: #fff; }
+code { font-family: ui-monospace, monospace; }
+.pass::marker { content: "✓  "; color: #1f7d2f; }
+.fail::marker { content: "✗  "; color: #b3261e; }
+.fail { color: #b3261e; }
